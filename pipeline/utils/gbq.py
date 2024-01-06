@@ -7,6 +7,7 @@ This file contains some utility functions for interacting with Google BigQuery.
 # The code below will set up the file.
 
 # Import packages
+import uuid
 from google.cloud import bigquery
 
 # ===============
@@ -67,11 +68,14 @@ def delete_table(project_id, dataset_id, table_id, gbq_client=None):
         table_id (str): The table ID for the table to be deleted.
         gbq_client (google.cloud.bigquery.client.Client): A BigQuery client object. If None, a new client will be created.
     """
-    if gbq_client is None:
-        gbq_client = bigquery.Client(project=project_id)
-    table_ref = gbq_client.dataset(dataset_id).table(table_id)
-    gbq_client.delete_table(table_ref)
-    print("Table {}:{} deleted.".format(dataset_id, table_id))
+    try:
+        if gbq_client is None:
+            gbq_client = bigquery.Client(project=project_id)
+        table_ref = gbq_client.dataset(dataset_id).table(table_id)
+        gbq_client.delete_table(table_ref)
+        print("Table {}:{} deleted.".format(dataset_id, table_id))
+    except Exception:
+        print("Table {}:{} does not exist.".format(dataset_id, table_id))
 
 
 def create_table(
@@ -212,7 +216,7 @@ def generate_audio_table(
     delete_if_exists=False,
 ):
     """
-    This helper theme will initialize the `audio` table in the `backend_data` dataset, if it doesn't already exist.
+    This helper method will initialize the `audio` table in the `backend_data` dataset, if it doesn't already exist.
     """
 
     # If the gbq_client is not provided, create one
@@ -237,5 +241,39 @@ def generate_audio_table(
     )
 
 
+def generate_transcriptions_table(
+    project_id="neural-needledrop",
+    dataset_id="backend_data",
+    gbq_client=None,
+    delete_if_exists=False,
+):
+    """
+    This method will initialize the `transcriptions` table in the `backend_data` dataset, if it doesn't already exist.
+    """
 
+    # If the gbq_client is not provided, create one
+    if gbq_client is None:
+        gbq_client = bigquery.Client(project=project_id)
 
+    # Define the table schema
+    schema = [
+        bigquery.SchemaField("url", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("text", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("language", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("created_at", "DATETIME", mode="REQUIRED"),
+        bigquery.SchemaField("segment_type", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("segment_id", "INTEGER", mode="REQUIRED"),
+        bigquery.SchemaField("segment_seek", "INTEGER", mode="REQUIRED"),
+        bigquery.SchemaField("segment_start", "FLOAT", mode="REQUIRED"),
+        bigquery.SchemaField("segment_end", "FLOAT", mode="REQUIRED"),
+    ]
+
+    # Create the table
+    create_table(
+        project_id=project_id,
+        dataset_id=dataset_id,
+        table_id="transcriptions",
+        schema=schema,
+        gbq_client=gbq_client,
+        delete_if_exists=delete_if_exists,
+    )

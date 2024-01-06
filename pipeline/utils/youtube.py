@@ -80,3 +80,16 @@ def download_audio_from_video(video_url, data_folder_path):
         raise Exception(
             f"Error downloading audio for video {video_url}: '{e}'\nTraceback is as follows:\n{traceback.format_exc()}"
         )
+
+
+# This method will convert an m4a file to mp3
+def convert_m4a_to_mp3(input_file_path, output_file_path):
+    
+    # Import the necessary library
+    import subprocess
+    
+    # Generate the ffmpeg command we'll use
+    command = f"""ffmpeg -i {input_file_path} {output_file_path}"""
+
+    # Run the command
+    rsp = subprocess.run(command)
