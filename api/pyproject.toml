@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "neural-needledrop-api"
+version = "0.1.0"
+description = "The API for Neural Needledrop. It uses FastAPI"
+authors = ["Trevor Hubbard <trevormhubbard@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.1.4"
+google-cloud-bigquery = "^3.14.1"
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+ipykernel = "^6.28.0"
+plotly = "^5.18.0"
+dash = "^2.14.2"
+openpyxl = "^3.1.2"
+pickleshare = "^0.7.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
