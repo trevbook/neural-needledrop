@@ -277,3 +277,72 @@ def generate_transcriptions_table(
         gbq_client=gbq_client,
         delete_if_exists=delete_if_exists,
     )
+
+
+def generate_enriched_video_metadata_table(
+    project_id="neural-needledrop",
+    dataset_id="backend_data",
+    gbq_client=None,
+    delete_if_exists=False,
+):
+    """
+    This method will initialize the `enriched_video_metadata` table in the `backend_data` dataset, if it doesn't already exist.
+    """
+
+    # If the gbq_client is not provided, create one
+    if gbq_client is None:
+        gbq_client = bigquery.Client(project=project_id)
+
+    # Define the table schema
+    schema = [
+        bigquery.SchemaField("id", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("url", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("video_type", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("review_score", "INTEGER", mode="NULLABLE"),
+    ]
+
+    # Create the table
+    create_table(
+        project_id=project_id,
+        dataset_id=dataset_id,
+        table_id="enriched_video_metadata",
+        schema=schema,
+        gbq_client=gbq_client,
+        delete_if_exists=delete_if_exists,
+    )
+
+
+def generate_embeddings_table(
+    project_id="neural-needledrop",
+    dataset_id="backend_data",
+    gbq_client=None,
+    delete_if_exists=False,
+):
+    """
+    This method will initialize the `embeddings` table in the `backend_data` dataset, if it doesn't already exist.
+    """
+
+    # If the gbq_client is not provided, create one
+    if gbq_client is None:
+        gbq_client = bigquery.Client(project=project_id)
+
+    # Define the table schema
+    schema = [
+        bigquery.SchemaField("id", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("video_url", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("gcs_uri", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("embedding_type", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("start_segment", "INTEGER", mode="REQUIRED"),
+        bigquery.SchemaField("end_segment", "INTEGER", mode="REQUIRED"),
+        bigquery.SchemaField("segment_length", "INTEGER", mode="REQUIRED"),
+    ]
+
+    # Create the table
+    create_table(
+        project_id=project_id,
+        dataset_id=dataset_id,
+        table_id="embeddings",
+        schema=schema,
+        gbq_client=gbq_client,
+        delete_if_exists=delete_if_exists,
+    )
