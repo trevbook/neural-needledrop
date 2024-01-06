@@ -11,6 +11,11 @@ google-cloud-bigquery = "^3.14.1"
 pandas = "^2.1.4"
 pytube = "^15.0.0"
 requests = "^2.31.0"
+tqdm = "^4.66.1"
+pandas-gbq = "^0.20.0"
+python-levenshtein = "^0.23.0"
+spotipy = "^2.23.0"
+google-cloud-storage = "^2.14.0"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"

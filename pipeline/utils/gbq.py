@@ -105,6 +105,58 @@ def create_table(
         print("Table {}:{} already exists.".format(dataset_id, table_id))
 
 
+def add_rows_to_table(project_id, dataset_id, table_id, rows, gbq_client=None):
+    """
+    Add rows to a table in BigQuery.
+
+    Args:
+        project_id (str): The project ID for the project where the table resides.
+        dataset_id (str): The dataset ID for the dataset where the table resides.
+        table_id (str): The table ID for the table to be created.
+        rows (list): A list of dictionaries containing the rows to be added to the table.
+        gbq_client (google.cloud.bigquery.client.Client): A BigQuery client object. If None, a new client will be created.
+    """
+    if gbq_client is None:
+        gbq_client = bigquery.Client(project=project_id)
+    dataset_ref = gbq_client.dataset(dataset_id)
+    table_ref = dataset_ref.table(table_id)
+    table = gbq_client.get_table(table_ref)
+    errors = gbq_client.insert_rows(table, rows)
+    if errors == []:
+        print("Loaded {} row(s) into {}:{}.".format(len(rows), dataset_id, table_id))
+    else:
+        print("Errors: {}".format(errors))
+
+
+def create_temporary_table_in_gbq(
+    dataframe,
+    project_id,
+    dataset_name,
+    table_name=None,
+    if_exists="fail",
+    gbq_client=None,
+):
+    # If the GBQ client is not provided, then we're going to create a new one
+    if gbq_client is None:
+        gbq_client = bigquery.Client(project=project_id)
+
+    # Generate a random table name if not provided
+    if not table_name:
+        table_name = str(uuid.uuid4()).replace("-", "_")
+
+    full_table_name = f"{dataset_name}.{table_name}"
+
+    # Use pandas-gbq to upload the DataFrame
+    dataframe.to_gbq(
+        destination_table=full_table_name,
+        project_id=project_id,
+        if_exists=if_exists,
+    )
+
+    # Return the full table name
+    return f"{project_id}.{full_table_name}"
+
+
 # ======================
 # TABLE-SPECIFIC METHODS
 # ======================
@@ -132,10 +184,14 @@ def generate_video_metadata_table(
         bigquery.SchemaField("length", "INTEGER", mode="REQUIRED"),
         bigquery.SchemaField("channel_id", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("channel_name", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("short_description", "STRING", mode="NULLABLE"),
         bigquery.SchemaField("description", "STRING", mode="NULLABLE"),
         bigquery.SchemaField("view_ct", "INTEGER", mode="NULLABLE"),
         bigquery.SchemaField("url", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("thumbnail_url", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("small_thumbnail_url", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("large_thumbnail_url", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("publish_date", "DATETIME", mode="NULLABLE"),
+        bigquery.SchemaField("scrape_date", "DATETIME", mode="REQUIRED"),
     ]
 
     # Define the table_id
@@ -147,3 +203,39 @@ def generate_video_metadata_table(
         gbq_client=gbq_client,
         delete_if_exists=delete_if_exists,
     )
+
+
+def generate_audio_table(
+    project_id="neural-needledrop",
+    dataset_id="backend_data",
+    gbq_client=None,
+    delete_if_exists=False,
+):
+    """
+    This helper theme will initialize the `audio` table in the `backend_data` dataset, if it doesn't already exist.
+    """
+
+    # If the gbq_client is not provided, create one
+    if gbq_client is None:
+        gbq_client = bigquery.Client(project=project_id)
+
+    # Define the table schema
+    schema = [
+        bigquery.SchemaField("video_url", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("audio_gcs_uri", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("scrape_date", "DATETIME", mode="REQUIRED"),
+    ]
+
+    # Define the table_id
+    create_table(
+        project_id=project_id,
+        dataset_id=dataset_id,
+        table_id="audio",
+        schema=schema,
+        gbq_client=gbq_client,
+        delete_if_exists=delete_if_exists,
+    )
+
+
+
+
