@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "neural-needledrop-pipeline"
+version = "0.1.0"
+description = "The data pipeline for the Neural Needledrop app. Written with Python"
+authors = ["Trevor Hubbard <trevormhubbard@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+google-cloud-bigquery = "^3.14.1"
+pandas = "^2.1.4"
+pytube = "^15.0.0"
+requests = "^2.31.0"
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+ipykernel = "^6.28.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
