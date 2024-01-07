@@ -9,25 +9,30 @@ This file contains various utility functions related to logging with Google Clou
 
 # Import statements
 import logging
+import os
 from google.cloud import logging as cloud_logging
 
 # Get the GBQ_PROJECT_ID
 # TODO: I'll eventually have to grab this from an environment variable or something
 GBQ_PROJECT_ID = "neural-needledrop"
 
-# Define the level of logging we're interested in
-LOGGING_LEVEL = logging.INFO
+# Define the level of logging we're interested in based on the LOG_LEVEL environment variable
+options = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+}
+LOGGING_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
 # Instantiate a Google Cloud Logging client
 client = cloud_logging.Client(project=GBQ_PROJECT_ID)
 
 # Retrieves a Cloud Logging handler based on the environment
-client.setup_logging(
-    log_level=LOGGING_LEVEL,
-)
+client.setup_logging(log_level=LOGGING_LEVEL)
 
 
-# Set up a particular logger
 def get_logger(name, log_to_console=False):
     """
     This function sets up a logger with a particular name.
@@ -39,18 +44,29 @@ def get_logger(name, log_to_console=False):
     # Get the logger
     logger = logging.getLogger(name)
 
-    # Optionall,y add a console handler
+    # Ensure that at least one handler is attached
+    if not logger.handlers:
+        # If no handler is present, add a NullHandler to avoid 'No handlers could be found' warning
+        logger.addHandler(logging.NullHandler())
+
+    # Optionally, add a console handler
     if log_to_console:
         console_handler = logging.StreamHandler()
         console_handler.setLevel(LOGGING_LEVEL)
-        console_handler.setFormatter(logging.Formatter(formatter_string))
         logger.addHandler(console_handler)
 
-    # Set up the formatter
+    # Set up the formatter and apply it to all handlers
     formatter = logging.Formatter(formatter_string)
+    for handler in logger.handlers:
+        handler.setFormatter(formatter)
 
-    # Set the formatter
-    logger.handlers[0].setFormatter(formatter)
+    return logger
 
-    # Return the logger
+
+def get_dummy_logger():
+    """
+    Create a dummy logger that does nothing with log messages.
+    """
+    logger = logging.getLogger("dummy")
+    logger.addHandler(logging.NullHandler())
     return logger
