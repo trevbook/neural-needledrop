@@ -33,7 +33,7 @@ def run_download_audio_job(
     n_max_videos_to_download=100,
     time_to_sleep_between_requests=10,
     sleep_multiplier=2.5,
-    temp_download_directory="temp_audio_data",
+    temp_download_directory="temp_audio_data/",
     gbq_client=None,
     gcs_client=None,
 ):

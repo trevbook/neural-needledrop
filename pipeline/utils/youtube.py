@@ -41,28 +41,35 @@ def get_video_urls_from_channel(
     # Initialize the video count
     video_count = 0
 
-    # Iterate through the channel's videos until we find the `most_recent_video_url`
-    while most_recent_video_url not in video_urls:
-        # Fetch the video URLs
-        new_video_urls = channel.video_urls[
-            video_count : video_count + video_parse_step_size
-        ]
+    # If the video_limit is None, we're going to download all of the video URLs
+    if video_limit is None:
+        video_urls = channel.video_urls
 
-        # Break out if no new video URLs were found
-        if len(new_video_urls) == 0:
-            break
+    # Otherwise, if the video_limit is not None, we're going to download the video URLs in chunks,
+    # until we either find the `most_recent_video_url` or we reach the `video_limit`
+    else:
+        # Iterate through the channel's videos until we find the `most_recent_video_url`
+        while most_recent_video_url not in video_urls:
+            # Fetch the video URLs
+            new_video_urls = channel.video_urls[
+                video_count : video_count + video_parse_step_size
+            ]
 
-        video_urls.extend(new_video_urls)
+            # Break out if no new video URLs were found
+            if len(new_video_urls) == 0:
+                break
 
-        # Update the video count
-        video_count += video_parse_step_size
+            video_urls.extend(new_video_urls)
 
-        # If we've reached the video limit, then break
-        if video_limit is not None and video_count >= video_limit:
-            break
+            # Update the video count
+            video_count += video_parse_step_size
+
+            # If we've reached the video limit, then break
+            if video_limit is not None and video_count >= video_limit:
+                break
 
     # Return the video URLs
-    return video_urls
+    return list(set(video_urls))
 
 
 def download_audio_from_video(video_url, data_folder_path):

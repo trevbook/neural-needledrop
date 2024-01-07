@@ -85,6 +85,7 @@ def embed_text_list(
     requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE,
     model="text-embedding-ada-002",
     max_workers=8,
+    show_progress=True,
 ):
     """
     This method will embed a list of texts, and return a list of embeddings.
@@ -130,7 +131,10 @@ def embed_text_list(
 
         # Initialize tqdm iterator to show progress
         futures_iterator = tqdm(
-            as_completed(future_to_text), total=len(text_list), desc="Embedding Texts"
+            as_completed(future_to_text),
+            total=len(text_list),
+            desc="Embedding Texts",
+            disable=not show_progress,
         )
 
         # Collect the results maintaining the order
@@ -154,5 +158,3 @@ def save_as_npy(embedding, file_name):
 
     # Save the array as a .npy file
     np.save(file_name, array)
-    
-    

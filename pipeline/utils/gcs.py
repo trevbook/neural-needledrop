@@ -9,6 +9,8 @@ They primarily use the `google-cloud-storage` package.
 # The code below will set up the file.
 
 # General import statements
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
@@ -96,6 +98,45 @@ def upload_file_to_bucket(
         logger.error(
             f"Error uploading file {file_name} to {project_id}.{bucket_name}: '{e}'"
         )
+
+
+def upload_files_to_bucket(
+    file_path_list,
+    bucket_name,
+    project_id,
+    gcs_client=None,
+    logger=None,
+    max_workers=10,
+    show_progress=False,
+):
+    """
+    Upload multiple files to a GCS bucket using parallel threads.
+    """
+    logger = logger or get_dummy_logger()
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_file = {
+            executor.submit(
+                upload_file_to_bucket,
+                file_path,
+                bucket_name,
+                project_id,
+                gcs_client,
+                logger,
+            ): file_path
+            for file_path in file_path_list
+        }
+        # Initialize tqdm iterator to show progress
+        futures_iterator = tqdm(
+            as_completed(future_to_file),
+            total=len(file_path_list),
+            desc="Uploading Embeddings",
+            disable=not show_progress,
+        )
+
+        # Collect the results maintaining the order
+        results = []
+        for future in futures_iterator:
+            results.append(future.result())
 
 
 def download_file_from_bucket(
