@@ -12,6 +12,7 @@ from google.cloud import bigquery
 
 # Import custom utils
 from utils.logging import get_dummy_logger
+from utils.settings import TQDM_ENABLED
 
 # ===============
 # GENERAL METHODS
@@ -19,7 +20,7 @@ from utils.logging import get_dummy_logger
 # These are some general purpose GBQ methods.
 
 
-def delete_dataset(project_id, dataset_id, gbq_client=None):
+def delete_dataset(project_id, dataset_id, gbq_client=None, logger=None):
     """
     Delete a dataset from BigQuery.
 
@@ -27,12 +28,14 @@ def delete_dataset(project_id, dataset_id, gbq_client=None):
         project_id (str): The project ID for the project where the dataset resides.
         dataset_id (str): The dataset ID for the dataset to be deleted.
         gbq_client (google.cloud.bigquery.client.Client): A BigQuery client object. If None, a new client will be created.
+        logger (logging.Logger): A logger object. If None, no logging will be performed.
     """
+    logger = logger or get_dummy_logger()
     if gbq_client is None:
         gbq_client = bigquery.Client(project=project_id)
     dataset_ref = gbq_client.dataset(dataset_id)
     gbq_client.delete_dataset(dataset_ref)
-    print("Dataset {} deleted.".format(dataset_id))
+    logger.debug(f"Deleted dataset {project_id}.{dataset_id}")
 
 
 def create_dataset(
@@ -66,7 +69,7 @@ def create_dataset(
         logger.debug(f"Dataset {project_id}.{dataset_id} already exists.")
 
 
-def delete_table(project_id, dataset_id, table_id, gbq_client=None):
+def delete_table(project_id, dataset_id, table_id, gbq_client=None, logger=None):
     """
     Delete a table from BigQuery.
 
@@ -75,20 +78,27 @@ def delete_table(project_id, dataset_id, table_id, gbq_client=None):
         dataset_id (str): The dataset ID for the dataset where the table resides.
         table_id (str): The table ID for the table to be deleted.
         gbq_client (google.cloud.bigquery.client.Client): A BigQuery client object. If None, a new client will be created.
+        logger (logging.Logger): A logger object. If None, no logging will be performed.
     """
+    logger = logger or get_dummy_logger()
     try:
         if gbq_client is None:
             gbq_client = bigquery.Client(project=project_id)
         table_ref = gbq_client.dataset(dataset_id).table(table_id)
         gbq_client.delete_table(table_ref)
-        print("Table {}:{} deleted.".format(dataset_id, table_id))
+        logger.debug(f"Deleted table {project_id}.{dataset_id}.{table_id}")
     except Exception:
-        print("Table {}:{} does not exist.".format(dataset_id, table_id))
+        logger.debug(f"Table {project_id}.{dataset_id}.{table_id} does not exist.")
 
 
 def create_table(
-    project_id, dataset_id, table_id, schema, gbq_client=None, delete_if_exists=False,
-    logger=None
+    project_id,
+    dataset_id,
+    table_id,
+    schema,
+    gbq_client=None,
+    delete_if_exists=False,
+    logger=None,
 ):
     """
     Create a table in BigQuery.
@@ -120,7 +130,9 @@ def create_table(
         logger.debug(f"Table {project_id}.{dataset_id}.{table_id} already exists.")
 
 
-def add_rows_to_table(project_id, dataset_id, table_id, rows, gbq_client=None):
+def add_rows_to_table(
+    project_id, dataset_id, table_id, rows, gbq_client=None, logger=None
+):
     """
     Add rows to a table in BigQuery.
 
@@ -130,7 +142,9 @@ def add_rows_to_table(project_id, dataset_id, table_id, rows, gbq_client=None):
         table_id (str): The table ID for the table to be created.
         rows (list): A list of dictionaries containing the rows to be added to the table.
         gbq_client (google.cloud.bigquery.client.Client): A BigQuery client object. If None, a new client will be created.
+        logger (logging.Logger): A logger object. If None, no logging will be performed.
     """
+    logger = logger or get_dummy_logger()
     if gbq_client is None:
         gbq_client = bigquery.Client(project=project_id)
     dataset_ref = gbq_client.dataset(dataset_id)
@@ -138,9 +152,13 @@ def add_rows_to_table(project_id, dataset_id, table_id, rows, gbq_client=None):
     table = gbq_client.get_table(table_ref)
     errors = gbq_client.insert_rows(table, rows)
     if errors == []:
-        print("Loaded {} row(s) into {}:{}.".format(len(rows), dataset_id, table_id))
+        logger.debug(
+            f"Added {len(rows):,} rows to table {project_id}.{dataset_id}.{table_id}"
+        )
     else:
-        print("Errors: {}".format(errors))
+        logger.debug(
+            f"Encountered errors while adding rows to table {project_id}.{dataset_id}.{table_id}: {errors}"
+        )
 
 
 def create_temporary_table_in_gbq(
@@ -150,7 +168,9 @@ def create_temporary_table_in_gbq(
     table_name=None,
     if_exists="fail",
     gbq_client=None,
+    logger=None,
 ):
+    logger = logger or get_dummy_logger()
     # If the GBQ client is not provided, then we're going to create a new one
     if gbq_client is None:
         gbq_client = bigquery.Client(project=project_id)
@@ -166,7 +186,10 @@ def create_temporary_table_in_gbq(
         destination_table=full_table_name,
         project_id=project_id,
         if_exists=if_exists,
+        progress_bar=False,
     )
+
+    logger.debug(f"Created temporary table {full_table_name}")
 
     # Return the full table name
     return f"{project_id}.{full_table_name}"
@@ -188,7 +211,7 @@ def generate_video_metadata_table(
     """
     This helper theme will initialize the `video_metadata` table in the `backend_data` dataset, if it doesn't already exist.
     """
-    
+
     # Set up the logger
     logger = logger or get_dummy_logger()
 
@@ -221,7 +244,7 @@ def generate_video_metadata_table(
         schema=schema,
         gbq_client=gbq_client,
         delete_if_exists=delete_if_exists,
-        logger=logger
+        logger=logger,
     )
 
 
@@ -235,7 +258,7 @@ def generate_audio_table(
     """
     This helper method will initialize the `audio` table in the `backend_data` dataset, if it doesn't already exist.
     """
-    
+
     # Set up the logger
     logger = logger or get_dummy_logger()
 
@@ -258,7 +281,7 @@ def generate_audio_table(
         schema=schema,
         gbq_client=gbq_client,
         delete_if_exists=delete_if_exists,
-        logger=logger
+        logger=logger,
     )
 
 
@@ -272,7 +295,7 @@ def generate_transcriptions_table(
     """
     This method will initialize the `transcriptions` table in the `backend_data` dataset, if it doesn't already exist.
     """
-    
+
     # Set up the logger
     logger = logger or get_dummy_logger()
 
@@ -301,7 +324,7 @@ def generate_transcriptions_table(
         schema=schema,
         gbq_client=gbq_client,
         delete_if_exists=delete_if_exists,
-        logger=logger
+        logger=logger,
     )
 
 
@@ -315,7 +338,7 @@ def generate_enriched_video_metadata_table(
     """
     This method will initialize the `enriched_video_metadata` table in the `backend_data` dataset, if it doesn't already exist.
     """
-    
+
     # Set up the logger
     logger = logger or get_dummy_logger()
 
@@ -339,7 +362,7 @@ def generate_enriched_video_metadata_table(
         schema=schema,
         gbq_client=gbq_client,
         delete_if_exists=delete_if_exists,
-        logger=logger
+        logger=logger,
     )
 
 
@@ -353,7 +376,7 @@ def generate_embeddings_table(
     """
     This method will initialize the `embeddings` table in the `backend_data` dataset, if it doesn't already exist.
     """
-    
+
     # Set up the logger
     logger = logger or get_dummy_logger()
 
@@ -380,7 +403,7 @@ def generate_embeddings_table(
         schema=schema,
         gbq_client=gbq_client,
         delete_if_exists=delete_if_exists,
-        logger=logger
+        logger=logger,
     )
 
 
@@ -402,7 +425,7 @@ def run_table_generation_method(
     # If the logger is not provided, create one
     if logger is None:
         logger = get_dummy_logger()
-    
+
     logger.debug(f"Running table generation method for {table_name}")
 
     # Define a mapping between table names and table generation methods
@@ -423,5 +446,5 @@ def run_table_generation_method(
         dataset_id=dataset_id,
         gbq_client=gbq_client,
         delete_if_exists=delete_if_exists,
-        logger=logger
+        logger=logger,
     )

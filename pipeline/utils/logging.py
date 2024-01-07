@@ -36,10 +36,16 @@ client.setup_logging(log_level=LOGGING_LEVEL)
 def get_logger(name, log_to_console=False):
     """
     This function sets up a logger with a particular name.
+    If a logger with the same name already exists, it is deleted before creation.
     """
 
     # Define the formatter string
     formatter_string = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+    # Check if a logger with the same name already exists
+    if name in logging.root.manager.loggerDict:
+        # Delete the existing logger to ensure a fresh setup
+        del logging.root.manager.loggerDict[name]
 
     # Get the logger
     logger = logging.getLogger(name)

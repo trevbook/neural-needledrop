@@ -39,6 +39,7 @@ def run_initialize_resources_job(
         "neural-needledrop-embeddings",
     ],
     gbq_client=None,
+    gcs_client=None
 ):
     """
     This method will generate all of the necessary cloud resources

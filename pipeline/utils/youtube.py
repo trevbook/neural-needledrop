@@ -11,36 +11,54 @@ Source: https://github.com/pytube/pytube/issues/1857
 # The code below will set up the file.
 
 # General import statements
-import pandas as pd
-from pytubefix import YouTube, Channel
-from google.cloud import bigquery
+from pytubefix import YouTube
 import traceback
-import time
-import random
-from tqdm import tqdm
-import pandas_gbq
 import datetime
-import uuid
-from datetime import timedelta
-from pathlib import Path
-
-# Importing custom utility functions
-import utils.gbq as gbq_utils
-
-# Indicate whether or not we want tqdm progress bars
-tqdm_enabled = True
-
-# Set some constants for the project
-GBQ_PROJECT_ID = "neural-needledrop"
-GBQ_DATASET_ID = "backend_data"
-
-# Set the pandas_gbq context to the project ID
-# pandas_gbq.context.project = GBQ_PROJECT_ID
 
 # =======================
 # GENERAL YOUTUBE METHODS
 # =======================
 # All of these methods are general purpose YouTube methods.
+
+
+def get_video_urls_from_channel(
+    channel, most_recent_video_url=None, video_limit=None, video_parse_step_size=10
+):
+    """
+    Helper method to identify all of the video URLs from a channel.
+    If `most_recent_video_url` is None, then we're going to download information for all of the videos we can,
+    all the way up to the `video_limit`. If *that* is None, then we're going to download information for all of the videos.
+    The `video_parse_step_size` indicates how many videos we're going to parse at a time.
+    """
+
+    # Initialize the video URLs
+    video_urls = []
+
+    # Initialize the video count
+    video_count = 0
+
+    # Iterate through the channel's videos until we find the `most_recent_video_url`
+    while most_recent_video_url not in video_urls:
+        # Fetch the video URLs
+        new_video_urls = channel.video_urls[
+            video_count : video_count + video_parse_step_size
+        ]
+
+        # Break out if no new video URLs were found
+        if len(new_video_urls) == 0:
+            break
+
+        video_urls.extend(new_video_urls)
+
+        # Update the video count
+        video_count += video_parse_step_size
+
+        # If we've reached the video limit, then break
+        if video_limit is not None and video_count >= video_limit:
+            break
+
+    # Return the video URLs
+    return video_urls
 
 
 def download_audio_from_video(video_url, data_folder_path):
@@ -82,14 +100,75 @@ def download_audio_from_video(video_url, data_folder_path):
         )
 
 
-# This method will convert an m4a file to mp3
 def convert_m4a_to_mp3(input_file_path, output_file_path):
-    
     # Import the necessary library
     import subprocess
-    
+
     # Generate the ffmpeg command we'll use
     command = f"""ffmpeg -i {input_file_path} {output_file_path}"""
 
     # Run the command
     rsp = subprocess.run(command)
+
+
+def parse_metadata_from_video(video_url):
+    """
+    This method will parse a dictionary containing metadata from a video, given its URL.
+    """
+
+    # Create a video object
+    video = YouTube(video_url)
+
+    # Keep a dictionary to keep track of the metadata we're interested in
+    video_metadata_dict = {}
+
+    # We'll wrap this in a try/except block so that we can catch any errors that occur
+    try:
+        # Parse the `videoDetails` from the video; this contains a lot of the metadata we're interested in
+        vid_info_dict = video.vid_info
+        video_info_dict = vid_info_dict.get("videoDetails")
+
+    # If we run into an Exception this early on, we'll raise an Exception
+    except Exception as e:
+        raise Exception(
+            f"Error parsing video metadata for video {video_url}: '{e}'\nTraceback is as follows:\n{traceback.format_exc()}"
+        )
+
+    # Extract different pieces of the video metadata
+    video_metadata_dict["id"] = video_info_dict.get("videoId")
+    video_metadata_dict["title"] = video_info_dict.get("title")
+    video_metadata_dict["length"] = video_info_dict.get("lengthSeconds")
+    video_metadata_dict["channel_id"] = video_info_dict.get("channelId")
+    video_metadata_dict["channel_name"] = video_info_dict.get("author")
+    video_metadata_dict["short_description"] = video_info_dict.get("shortDescription")
+    video_metadata_dict["view_ct"] = video_info_dict.get("viewCount")
+    video_metadata_dict["url"] = video_info_dict.get("video_url")
+    video_metadata_dict["small_thumbnail_url"] = (
+        video_info_dict.get("thumbnail").get("thumbnails")[0].get("url")
+    )
+    video_metadata_dict["large_thumbnail_url"] = (
+        video_info_dict.get("thumbnail").get("thumbnails")[-1].get("url")
+    )
+
+    # Try and extract the the publish_date
+    try:
+        publish_date = video.publish_date
+        video_metadata_dict["publish_date"] = publish_date
+    except:
+        video_metadata_dict["publish_date"] = None
+
+    # Try and extract the full description
+    try:
+        full_description = video.description
+        video_metadata_dict["description"] = full_description
+    except:
+        video_metadata_dict["description"] = None
+
+    # Use datetime to get the scrape_date (the current datetime)
+    video_metadata_dict["scrape_date"] = datetime.datetime.now()
+
+    # Add the url to the video_metadata_dict
+    video_metadata_dict["url"] = video_url
+
+    # Finally, return the video metadata dictionary
+    return video_metadata_dict

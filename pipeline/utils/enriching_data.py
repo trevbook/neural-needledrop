@@ -81,9 +81,6 @@ def extract_review_score(description):
 
     # Return None if we ran into an error
     except Exception as e:
-        print(
-            f"Ran into an error while extracting the review score from the description: '{e}'"
-        )
         return None
 
 
