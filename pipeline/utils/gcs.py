@@ -92,17 +92,13 @@ def upload_file_to_bucket(file_path, bucket_name, project_id, gcs_client=None):
         if gcs_client is None:
             gcs_client = storage.Client(project=project_id)
         bucket = gcs_client.bucket(bucket_name)
-        print(f"Found a bucket named {bucket_name} in project {project_id}.")
 
         # Extract the name of the file
         file_name = Path(file_path).name
-        print(f"Uploading file {file_name} to {project_id}.{bucket_name}...")
         blob = bucket.blob(file_name)
 
         # Upload the file using the file path
         blob.upload_from_filename(file_path)
-
-        print(f"File {file_path} uploaded to {project_id}.{bucket_name}")
     except Exception as e:
         print(f"Error uploading file {file_path} to {project_id}.{bucket_name}: {e}")
 
@@ -119,20 +115,14 @@ def download_file_from_bucket(
         # Check to see if the destination folder exists
         if not Path(destination_folder).exists():
             Path(destination_folder).mkdir(parents=True, exist_ok=True)
-            print(f"Created folder {destination_folder}")
 
         if gcs_client is None:
             gcs_client = storage.Client(project=project_id)
         bucket = gcs_client.bucket(bucket_name)
-        print(f"Found a bucket named {bucket_name} in project {project_id}.")
 
         # Download the file using the file path
         blob = bucket.blob(file_name)
         blob.download_to_filename(destination_folder + file_name)
-
-        print(
-            f"File {file_name} downloaded from {project_id}.{bucket_name} to {destination_folder}"
-        )
     except Exception as e:
         print(
             f"Error downloading file {file_name} from {project_id}.{bucket_name}: {e}"
