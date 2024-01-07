@@ -226,7 +226,7 @@ def generate_audio_table(
     # Define the table schema
     schema = [
         bigquery.SchemaField("video_url", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("audio_gcs_uri", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("audio_gcr_uri", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("scrape_date", "DATETIME", mode="REQUIRED"),
     ]
 
