@@ -9,34 +9,12 @@ They primarily use the `google-cloud-storage` package.
 # The code below will set up the file.
 
 # General import statements
-import pandas as pd
-from pytubefix import YouTube, Channel
-from google.cloud import bigquery
-import traceback
-import time
-import random
-from tqdm import tqdm
-import pandas_gbq
-import datetime
-import uuid
-from datetime import timedelta
 from pathlib import Path
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
 
 # Importing custom utility functions
-import utils.gbq as gbq_utils
-import utils.youtube as youtube_utils
-
-# Indicate whether or not we want tqdm progress bars
-tqdm_enabled = True
-
-# Set some constants for the project
-GBQ_PROJECT_ID = "neural-needledrop"
-GBQ_DATASET_ID = "backend_data"
-
-# Set the pandas_gbq context to the project ID
-# pandas_gbq.context.project = GBQ_PROJECT_ID
+from utils.logging import get_dummy_logger
 
 # ===================
 # GENERAL GCS METHODS
@@ -44,23 +22,30 @@ GBQ_DATASET_ID = "backend_data"
 # These are all general purpose GCS methods.
 
 
-def delete_gcs_bucket(bucket_name, project_id, gcs_client=None, delete_if_exists=False):
+def delete_gcs_bucket(
+    bucket_name, project_id, gcs_client=None, delete_if_exists=False, logger=None
+):
     """
     This is a helper method for deleting a bucket.
     """
+    logger = logger or get_dummy_logger()
     if gcs_client is None:
         gcs_client = storage.Client(project=project_id)
     bucket = gcs_client.get_bucket(bucket_name)
 
     # Then delete the bucket
     bucket.delete(force=delete_if_exists)
-    print(f"Bucket {project_id}.{bucket_name} deleted")
+    logger.debug(f"Bucket {project_id}.{bucket_name} deleted")
 
 
-def create_bucket(bucket_name, project_id, gcs_client=None, delete_if_exists=False):
+def create_bucket(
+    bucket_name, project_id, gcs_client=None, delete_if_exists=False, logger=None
+):
     """
     This is a helper method for creating a bucket.
     """
+    logger = logger or get_dummy_logger()
+
     if gcs_client is None:
         gcs_client = storage.Client(project=project_id)
 
@@ -69,24 +54,31 @@ def create_bucket(bucket_name, project_id, gcs_client=None, delete_if_exists=Fal
         gcs_client.get_bucket(bucket_name)
         if delete_if_exists:
             delete_gcs_bucket(
-                bucket_name, project_id, gcs_client, delete_if_exists=delete_if_exists
+                bucket_name,
+                project_id,
+                gcs_client,
+                delete_if_exists=delete_if_exists,
+                logger=logger,
             )
         else:
-            print(f"Bucket {project_id}.{bucket_name} already exists.")
+            logger.debug(f"Bucket {project_id}.{bucket_name} already exists")
             return
     except NotFound:
         pass
 
     # Create a new bucket
-    bucket = gcs_client.create_bucket(bucket_name)
-    print(f"Bucket {project_id}.{bucket_name} created")
+    gcs_client.create_bucket(bucket_name)
+    logger.debug(f"Bucket {project_id}.{bucket_name} created")
 
 
-def upload_file_to_bucket(file_path, bucket_name, project_id, gcs_client=None):
+def upload_file_to_bucket(
+    file_path, bucket_name, project_id, gcs_client=None, logger=None
+):
     """
     This is a helper method for uploading a file to a bucket.
     The file is defined by whatever is at `file_path`.
     """
+    logger = logger or get_dummy_logger()
     # We'll wrap this in a try/except block in case we run into an error
     try:
         if gcs_client is None:
@@ -99,17 +91,22 @@ def upload_file_to_bucket(file_path, bucket_name, project_id, gcs_client=None):
 
         # Upload the file using the file path
         blob.upload_from_filename(file_path)
+        logger.debug(f"File {file_name} uploaded to {project_id}.{bucket_name}")
     except Exception as e:
-        print(f"Error uploading file {file_path} to {project_id}.{bucket_name}: {e}")
+        logger.error(
+            f"Error uploading file {file_name} to {project_id}.{bucket_name}: '{e}'"
+        )
 
 
 def download_file_from_bucket(
-    bucket_name, file_name, destination_folder, project_id, gcs_client=None
+    bucket_name, file_name, destination_folder, project_id, gcs_client=None, logger=None
 ):
     """
     This is a helper method for downloading a file from a bucket.
     The file is defined by whatever is at `file_path`.
     """
+    logger = logger or get_dummy_logger()
+
     # We'll wrap this in a try/except block in case we run into an error
     try:
         # Check to see if the destination folder exists
@@ -123,7 +120,8 @@ def download_file_from_bucket(
         # Download the file using the file path
         blob = bucket.blob(file_name)
         blob.download_to_filename(destination_folder + file_name)
+        logger.debug(f"File {file_name} downloaded from {project_id}.{bucket_name}")
     except Exception as e:
-        print(
-            f"Error downloading file {file_name} from {project_id}.{bucket_name}: {e}"
+        logger.error(
+            f"Error downloading file {file_name} from {project_id}.{bucket_name}: '{e}'"
         )

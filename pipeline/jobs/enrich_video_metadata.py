@@ -25,7 +25,7 @@ from utils.settings import GBQ_PROJECT_ID, GBQ_DATASET_ID, LOG_TO_CONSOLE
 # when this job is run.
 
 
-def run_enrich_video_metadata_job(max_n_videos_to_enrich=1000):
+def run_enrich_video_metadata_job(max_n_videos_to_enrich=1000, gbq_client=None):
     """
     This method will enrich the data in the `video_metadata` table with additional
     information about the videos.
@@ -97,6 +97,7 @@ def run_enrich_video_metadata_job(max_n_videos_to_enrich=1000):
         table_id="enriched_video_metadata",
         rows=enriched_metadata_to_upload_df.to_dict(orient="records"),
         logger=logger,
+        gbq_client=gbq_client,
     )
 
     # Log that we've finished the job

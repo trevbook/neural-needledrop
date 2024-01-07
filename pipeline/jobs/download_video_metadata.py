@@ -61,7 +61,7 @@ def run_download_video_metadata_job(
     # ==========================
     # DETERMINE VIDEOS TO SCRAPE
     # ==========================
-    # Beloww, we'll try and determine which videos should be scraped
+    # Below, we'll try and determine which videos should be scraped
     # for this particular channel, using the `most_recent_video_url`,
     # `video_limit`, and `video_parse_step_size` arguments.
 

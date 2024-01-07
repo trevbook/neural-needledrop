@@ -14,6 +14,10 @@ Source: https://github.com/pytube/pytube/issues/1857
 from pytubefix import YouTube
 import traceback
 import datetime
+import subprocess
+
+# Importing custom modules
+from utils.logging import get_dummy_logger
 
 # =======================
 # GENERAL YOUTUBE METHODS
@@ -100,12 +104,12 @@ def download_audio_from_video(video_url, data_folder_path):
         )
 
 
-def convert_m4a_to_mp3(input_file_path, output_file_path):
-    # Import the necessary library
-    import subprocess
+def convert_m4a_to_mp3(input_file_path, output_file_path, logger=None):
+    logger = logger or get_dummy_logger()
 
     # Generate the ffmpeg command we'll use
     command = f"""ffmpeg -i {input_file_path} {output_file_path}"""
+    logger.debug(f"Converting from .m4a to .mp3 using the following command: {command}")
 
     # Run the command
     rsp = subprocess.run(command)

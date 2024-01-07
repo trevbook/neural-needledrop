@@ -10,11 +10,12 @@ already initialized, this job will do nothing.
 # The code below will set up the rest of this file
 
 # Import statements
-from google.cloud import bigquery
+from google.cloud import bigquery, storage
 
 # Importing custom utility functions
 from utils.settings import GBQ_PROJECT_ID, GBQ_DATASET_ID, LOG_TO_CONSOLE
 import utils.gbq as gbq_utils
+import utils.gcs as gcs_utils
 import utils.logging as logging_utils
 
 # ========
@@ -39,7 +40,7 @@ def run_initialize_resources_job(
         "neural-needledrop-embeddings",
     ],
     gbq_client=None,
-    gcs_client=None
+    gcs_client=None,
 ):
     """
     This method will generate all of the necessary cloud resources
@@ -60,6 +61,10 @@ def run_initialize_resources_job(
     # If the GBQ client isn't provided, create it
     if gbq_client is None:
         gbq_client = bigquery.Client(project=GBQ_PROJECT_ID)
+
+    # If the GCS client isn't provided, create it
+    if gcs_client is None:
+        gcs_client = storage.Client(project=GBQ_PROJECT_ID)
 
     # Start by creating the GBQ dataset
     gbq_utils.create_dataset(
@@ -94,7 +99,16 @@ def run_initialize_resources_job(
     # make sure that they exist. If they don't, we'll create them. If they do,
     # we'll skip them (unless `delete_existing_buckets` is set to True).
 
-    # Set up a mapping between bucket names and the methods that will create them
+    # Iterate through the different buckets and make sure they exist
+    for bucket_name in buckets_to_create:
+        gcs_utils.create_bucket(
+            bucket_name=bucket_name,
+            project_id=GBQ_PROJECT_ID,
+            gcs_client=gcs_client,
+            delete_if_exists=delete_existing_buckets,
+            logger=logger
+        )
+        
 
     # Log success
     logger.info("Finished the INITIALIZE RESOURCES job.")
