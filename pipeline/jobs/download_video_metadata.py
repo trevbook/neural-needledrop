@@ -32,7 +32,7 @@ def run_download_video_metadata_job(
     channel_url,
     delete_existing_tables=False,
     video_limit=1000,
-    most_recent_video_url=None,
+    stop_at_most_recent_video=None,
     video_parse_step_size=200,
     gbq_client=None,
     time_to_sleep_between_requests=3,
@@ -51,12 +51,53 @@ def run_download_video_metadata_job(
     # Log that we're starting the job, as well as some starting information
     logger.info("Starting the DOWNLOAD VIDEO METADATA job.")
     logger.info(f"Crawling channel {channel_url}.")
-    if most_recent_video_url is not None:
-        logger.info(f"Starting at video {most_recent_video_url}.")
 
     # If the GBQ client isn't provided, create it
     if gbq_client is None:
         gbq_client = bigquery.Client(project=GBQ_PROJECT_ID)
+
+    # =================================
+    # DETERMINING MOST RECENT VIDEO URL
+    # =================================
+    # Below, we'll figure out the most recent video that we've got data for
+    # for this channel. We'll use this to determine which videos we need to
+    # scrape.
+
+    # If we don't want to stop at the most recent video, then we'll set the most recent video to None
+    if stop_at_most_recent_video is False:
+        most_recent_video_url = None
+
+    # Otherwise, we'll determine the most recent video
+    else:
+        # Define the query that'll grab the most recent video url
+        most_recent_video_url_query = """
+        SELECT
+        metadata.url
+        FROM
+        `neural-needledrop.backend_data.video_metadata` metadata
+        ORDER BY
+        publish_date DESC, scrape_date DESC
+        LIMIT 1
+        """
+
+        # Use pandas-gbq to run the query
+        most_recent_video_url_df = pd.read_gbq(
+            most_recent_video_url_query, project_id=GBQ_PROJECT_ID
+        )
+
+        # If the length of the dataframe is zero, then we need to set the url to None
+        if len(most_recent_video_url_df) == 0:
+            most_recent_video_url = None
+
+        # Otherwise, we can just grab the url from the dataframe
+        else:
+            most_recent_video_url = most_recent_video_url_df.iloc[0]["url"]
+
+    # Log some information about the most recent video url
+    if most_recent_video_url is None:
+        logger.info(f"No most recent video url found.")
+    else:
+        logger.info(f"Most recent video url found: {most_recent_video_url}")
 
     # ==========================
     # DETERMINE VIDEOS TO SCRAPE

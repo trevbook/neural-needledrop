@@ -25,7 +25,7 @@ from utils.settings import GBQ_PROJECT_ID, GBQ_DATASET_ID, LOG_TO_CONSOLE
 # when this job is run.
 
 
-def run_enrich_video_metadata_job(max_n_videos_to_enrich=1000, gbq_client=None):
+def run_enrich_video_metadata_job(max_n_videos_to_enrich=None, gbq_client=None):
     """
     This method will enrich the data in the `video_metadata` table with additional
     information about the videos.
@@ -38,6 +38,11 @@ def run_enrich_video_metadata_job(max_n_videos_to_enrich=1000, gbq_client=None):
 
     # Log that we're starting the job
     logger.info("Starting the ENRICH VIDEO METADATA job.")
+
+    # Define a "limit string" if the max_n_videos_to_enrich argument is not None
+    limit_str = ""
+    if max_n_videos_to_enrich is not None:
+        limit_str = f"LIMIT {max_n_videos_to_enrich}"
 
     # The query below will define the videos that we need to enrich
     videos_to_enrich_query = f"""
@@ -53,7 +58,7 @@ def run_enrich_video_metadata_job(max_n_videos_to_enrich=1000, gbq_client=None):
     FROM `backend_data.enriched_video_metadata` enriched_metadata
     WHERE enriched_metadata.url = metadata.url
     )
-    LIMIT {max_n_videos_to_enrich}
+    {limit_str}
     """
 
     # Execute the query

@@ -25,7 +25,7 @@ import utils.logging as logging_utils
 # when this job is run.
 
 
-def run_initialize_resources_job(
+def run_initialize_cloud_resources_job(
     delete_existing_tables=False,
     delete_existing_buckets=False,
     tables_to_create=[
