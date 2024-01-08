@@ -10,7 +10,7 @@ GBQ_PROJECT_ID = os.getenv("GBQ_PROJECT_ID", "neural-needledrop")
 GBQ_DATASET_ID = os.getenv("GBQ_DATASET_ID", "backend_data")
 
 # Determine whether logging should print to console
-LOG_TO_CONSOLE = os.getenv("LOG_TO_CONSOLE", "False") == "True"
+LOG_TO_CONSOLE = os.getenv("LOG_TO_CONSOLE") is not None
 
 # Determine whether the tqdm progress bar should be enabled
-TQDM_ENABLED = os.getenv("TQDM_ENABLED", "False") == "True"
+TQDM_ENABLED = os.getenv("TQDM_ENABLED") is not None

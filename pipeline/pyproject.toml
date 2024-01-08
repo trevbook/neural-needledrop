@@ -20,6 +20,7 @@ google-cloud-logging = "^3.9.0"
 openai = "^1.6.1"
 tenacity = "^8.2.3"
 pyyaml = "^6.0.1"
+pytubefix = "^1.12.0"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"

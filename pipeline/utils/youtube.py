@@ -115,7 +115,8 @@ def convert_m4a_to_mp3(input_file_path, output_file_path, logger=None):
     logger = logger or get_dummy_logger()
 
     # Generate the ffmpeg command we'll use
-    command = f"""ffmpeg -i {input_file_path} {output_file_path}"""
+    # command = f"""ffmpeg -i {input_file_path} {output_file_path}"""
+    command = ["ffmpeg", "-i", input_file_path, output_file_path]
     logger.debug(f"Converting from .m4a to .mp3 using the following command: {command}")
 
     # Run the command

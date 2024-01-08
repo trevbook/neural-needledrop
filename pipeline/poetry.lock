@@ -2529,6 +2529,17 @@ files = [
 ]
 
 [[package]]
+name = "pytubefix"
+version = "1.12.0"
+description = "Python3 library for downloading YouTube Videos."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytubefix-1.12.0-py3-none-any.whl", hash = "sha256:19c82d91258f3f4b5544f8e53e83942bd684f8b4d48ded0810793fc1598f6e11"},
+    {file = "pytubefix-1.12.0.tar.gz", hash = "sha256:b2221f268195f15bf6fd843b83f3425604b337e750bca6ce3d1535e1fd34035d"},
+]
+
+[[package]]
 name = "pytz"
 version = "2023.3.post1"
 description = "World timezone definitions, modern and historical"
@@ -3448,4 +3459,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "072668747ae907a05eb63c5faf47b408f12f33ce2a1cf2746db8ced51188e2c4"
+content-hash = "c6040dfdf02781d54fdee16b76c18e6ec250920f508d011a84ac6746717de6af"

@@ -164,3 +164,4 @@ pipeline/temp_data/*
 # Ignore any file with an .m4a or .mp3 extension
 *.m4a
 *.mp3
+pipeline/gcloud-service-key.json
