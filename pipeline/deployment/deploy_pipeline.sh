@@ -7,13 +7,23 @@ if ! command -v docker &>/dev/null; then
     # Add Docker's official GPG key:
     sudo apt-get update
     sudo apt-get install -y ca-certificates curl gnupg lsb-release
-    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    # curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
-    # Add the repository to Apt sources:
+    # # Add the repository to Apt sources:
+    # echo \
+    #     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+    # $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
+    #     sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+
+
+    # FROM CHATGPT:
+    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    # Set up the stable repository
     echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
-    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
-        sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+    "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+
     sudo apt-get update
 
     # Now, we'll install Docker
@@ -38,7 +48,7 @@ sudo docker rm neural-needledrop-pipeline-container || true
 
 # Copy the pipeline_cron file to /etc/cron.d/
 echo "Copying pipeline_cron to /etc/cron.d/"
-sudo cp pipeline_cron /etc/cron.d/pipeline_cron
+sudo cp /tmp/pipeline_cron /etc/cron.d/pipeline_cron
 
 # Set appropriate permissions for the cron file
 echo "Setting permissions for the cron file"

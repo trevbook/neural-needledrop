@@ -18,6 +18,9 @@ COPY pyproject.toml poetry.lock* /app/
 RUN poetry export --without-hashes --format=requirements.txt > poetry-requirements.txt
 RUN pip install --no-cache-dir -r poetry-requirements.txt
 
+# Install the CPU-only version of PyTorch
+RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
+
 # Copy requirements.txt and install additional dependencies
 COPY requirements.txt /app/
 RUN pip install -r requirements.txt
