@@ -51,11 +51,11 @@ jobs:
           echo "$GCP_KEY" > gcp_key.json
 
           # Copying the deployment script and the GCP JSON key to the server
-          scp -i ~/.ssh/id_rsa .pipeline/deployment/deploy_pipeline.sh trevbook@$IP_ADDRESS:/tmp/deploy_pipeline.sh
-          scp -i ~/.ssh/id_rsa ./gcp_key.json trevbook@$IP_ADDRESS:/tmp/gcp_key.json
+          scp -i ~/.ssh/id_rsa .pipeline/deployment/deploy_pipeline.sh trevormhubbard@$IP_ADDRESS:/tmp/deploy_pipeline.sh
+          scp -i ~/.ssh/id_rsa ./gcp_key.json trevormhubbard@$IP_ADDRESS:/tmp/gcp_key.json
 
           # Deleting the temporary GCP JSON key file
           rm gcp_key.json
 
           # Running the deployment script on the server
-          ssh -i ~/.ssh/id_rsa trevbook@$IP_ADDRESS 'chmod +x /tmp/deploy_pipeline.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_pipeline.sh'
+          ssh -i ~/.ssh/id_rsa trevormhubbard@$IP_ADDRESS 'chmod +x /tmp/deploy_pipeline.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_pipeline.sh'
