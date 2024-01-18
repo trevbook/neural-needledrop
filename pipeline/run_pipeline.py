@@ -54,7 +54,7 @@ def neural_needledrop_pipeline():
         channel_url="https://www.youtube.com/c/theneedledrop",
         video_limit=10,
         stop_at_most_recent_video=True,
-        video_parse_step_size=25,
+        video_parse_step_size=20,
         time_to_sleep_between_requests=2,
         sleep_time_multiplier=2.25,
         gbq_client=gbq_client,
@@ -66,8 +66,8 @@ def neural_needledrop_pipeline():
     # Download the audio
     pipeline_job_wrapper(
         run_download_audio_job,
-        n_max_videos_to_download=1,
-        time_to_sleep_between_requests=1,
+        n_max_videos_to_download=5,
+        time_to_sleep_between_requests=10,
         sleep_multiplier=3.25,
         gbq_client=gbq_client,
         gcs_client=gcs_client,
@@ -76,7 +76,7 @@ def neural_needledrop_pipeline():
     # Transcribe the audio
     pipeline_job_wrapper(
         run_transcribe_audio_job,
-        n_max_to_transcribe=1,
+        n_max_to_transcribe=10,
         gbq_client=gbq_client,
         gcs_client=gcs_client,
     )
