@@ -1,0 +1,61 @@
+# This file contains the workflow that'll build and deploy the Neural Needledrop data pipeline.
+name: Neural Needledrop Pipeline Deployment
+
+# This Workflow will only run on changes to the Pipeline code.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "pipeline/**"
+
+jobs:
+  # This job will deploy the pipeline!
+  build-and-deploy-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GAR
+        uses: docker/login-action@v3
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GCP_KEY }}
+      - name: Build and push pipeline image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: pipeline
+          tags: us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-pipeline:latest
+          provenance: false
+          platforms: linux/amd64
+          push: true
+      - name: Install SSH client
+        run: sudo apt-get install openssh-client
+      - name: SSH and Update Server
+        env:
+          SSH_PRIVATE_KEY: ${{secrets.SSH_PRIVATE_KEY}}
+          GCP_KEY: ${{secrets.GCP_KEY}}
+          IP_ADDRESS: 35.193.127.52
+        run: |
+
+          # Setting up SSH keys
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $IP_ADDRESS >> ~/.ssh/known_hosts
+
+          # Create a temporary file to store the GCP JSON key
+          echo "$GCP_KEY" > gcp_key.json
+
+          # Copying the deployment script and the GCP JSON key to the server
+          scp -i ~/.ssh/id_rsa .pipeline/deployment/deploy_pipeline.sh trevbook@$IP_ADDRESS:/tmp/deploy_pipeline.sh
+          scp -i ~/.ssh/id_rsa ./gcp_key.json trevbook@$IP_ADDRESS:/tmp/gcp_key.json
+
+          # Deleting the temporary GCP JSON key file
+          rm gcp_key.json
+
+          # Running the deployment script on the server
+          ssh -i ~/.ssh/id_rsa trevbook@$IP_ADDRESS 'chmod +x /tmp/deploy_pipeline.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_pipeline.sh'

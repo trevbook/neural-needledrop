@@ -1,0 +1,1 @@
+0 */4 * * * /usr/bin/docker run --rm --name neural-needledrop-pipeline-container us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-pipeline:latest

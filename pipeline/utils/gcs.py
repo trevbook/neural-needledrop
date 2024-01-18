@@ -129,7 +129,6 @@ def upload_files_to_bucket(
         futures_iterator = tqdm(
             as_completed(future_to_file),
             total=len(file_path_list),
-            desc="Uploading Embeddings",
             disable=not show_progress,
         )
 
@@ -166,3 +165,27 @@ def download_file_from_bucket(
         logger.error(
             f"Error downloading file {file_name} from {project_id}.{bucket_name}: '{e}'"
         )
+
+
+def list_bucket_objects(bucket_name, project_id, gcs_client=None, logger=None):
+    """
+    This method returns a list of all the objects in a given GCS bucket.
+    """
+    logger = logger or get_dummy_logger()
+    object_list = []
+
+    try:
+        if gcs_client is None:
+            gcs_client = storage.Client(project=project_id)
+        bucket = gcs_client.bucket(bucket_name)
+
+        # List all objects in the bucket
+        blobs = list(bucket.list_blobs())
+        object_list = [blob.name for blob in blobs]
+        logger.debug(f"Retrieved object list from {project_id}.{bucket_name}")
+    except Exception as e:
+        logger.error(
+            f"Error retrieving object list from {project_id}.{bucket_name}: '{e}'"
+        )
+
+    return object_list
