@@ -38,6 +38,7 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{secrets.SSH_PRIVATE_KEY}}
           GCP_KEY: ${{secrets.GCP_KEY}}
+          OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
           IP_ADDRESS: 35.193.127.52
         run: |
 
@@ -50,13 +51,20 @@ jobs:
           # Create a temporary file to store the GCP JSON key
           echo "$GCP_KEY" > gcp_key.json
 
+          # Create another temporary file to store the OpenAI API key
+          echo "$OPENAI_API_KEY" > openai_api_key.txt
+
           # Copying the deployment script and the GCP JSON key to the server
           scp -i ~/.ssh/id_rsa ./pipeline/deployment/deploy_pipeline.sh trevormhubbard@$IP_ADDRESS:/tmp/deploy_pipeline.sh
           scp -i ~/.ssh/id_rsa ./pipeline/deployment/pipeline_cron trevormhubbard@$IP_ADDRESS:/tmp/pipeline_cron
           scp -i ~/.ssh/id_rsa ./gcp_key.json trevormhubbard@$IP_ADDRESS:/tmp/gcp_key.json
+          scp -i ~/.ssh/id_rsa ./openai_api_key.txt trevormhubbard@$IP_ADDRESS:/tmp/openai_api_key.txt
 
           # Deleting the temporary GCP JSON key file
           rm gcp_key.json
+
+          # Deleting the temporary OpenAI API key file
+          rm openai_api_key.txt
 
           # Running the deployment script on the server
           ssh -i ~/.ssh/id_rsa trevormhubbard@$IP_ADDRESS 'chmod +x /tmp/deploy_pipeline.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_pipeline.sh'
