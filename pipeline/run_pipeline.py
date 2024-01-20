@@ -76,7 +76,7 @@ def neural_needledrop_pipeline():
     # Transcribe the audio
     pipeline_job_wrapper(
         run_transcribe_audio_job,
-        n_max_to_transcribe=10,
+        n_max_to_transcribe=50,
         gbq_client=gbq_client,
         gcs_client=gcs_client,
     )
