@@ -106,9 +106,7 @@ def download_audio_from_video(video_url, data_folder_path):
 
     # If we run into an exception, then we'll throw a custom Exception with the traceback
     except Exception as e:
-        raise Exception(
-            f"Error downloading audio for video {video_url}: '{e}'\nTraceback is as follows:\n{traceback.format_exc()}"
-        )
+        raise e
 
 
 def convert_m4a_to_mp3(input_file_path, output_file_path, logger=None):

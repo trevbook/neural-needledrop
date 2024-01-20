@@ -407,6 +407,41 @@ def generate_embeddings_table(
     )
 
 
+def generate_age_restricted_table(
+    project_id="neural-needledrop",
+    dataset_id="backend_data",
+    gbq_client=None,
+    delete_if_exists=False,
+    logger=None,
+):
+    """
+    This method will initialize the `age_restricted` table in the `backend_data` dataset, if it doesn't already exist.
+    """
+
+    # Set up the logger
+    logger = logger or get_dummy_logger()
+
+    # If the gbq_client is not provided, create one
+    if gbq_client is None:
+        gbq_client = bigquery.Client(project=project_id)
+
+    # Define the table schema
+    schema = [
+        bigquery.SchemaField("video_url", "STRING", mode="REQUIRED"),
+    ]
+
+    # Create the table
+    create_table(
+        project_id=project_id,
+        dataset_id=dataset_id,
+        table_id="age_restricted",
+        schema=schema,
+        gbq_client=gbq_client,
+        delete_if_exists=delete_if_exists,
+        logger=logger,
+    )
+
+
 def run_table_generation_method(
     table_name,
     project_id,
@@ -435,6 +470,7 @@ def run_table_generation_method(
         "transcriptions": generate_transcriptions_table,
         "enriched_video_metadata": generate_enriched_video_metadata_table,
         "embeddings": generate_embeddings_table,
+        "age_restricted": generate_age_restricted_table,
     }
 
     # Get the appropriate table generation method

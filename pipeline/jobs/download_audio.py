@@ -14,6 +14,7 @@ import traceback
 from tqdm import tqdm
 import datetime
 from pathlib import Path
+from pytubefix.exceptions import AgeRestrictedError
 
 # Importing custom utility functions
 import utils.gbq as gbq_utils
@@ -77,6 +78,8 @@ def run_download_audio_job(
     audio.video_url = video.url
     WHERE
     audio.audio_gcr_uri IS NULL
+    AND
+    video.url NOT IN (SELECT video_url FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.age_restricted`)
     LIMIT {n_max_videos_to_download}
     """
 
@@ -96,7 +99,10 @@ def run_download_audio_job(
     # =================
     # Next, we're going to iterate through each of the videos and download their audio.
 
-    # Iterate through the videos and download their audio
+    # Iterate through the videos and download their audio. If we find any age-restricted videos,
+    # we're going to store their video URLs in a list so that we can mark them as age-restricted
+    # in the database. (This will help us avoid downloading audio for them in the future.)
+    age_restricted_videos = []
     for video_url in tqdm(videos_for_audio_parsing_df["url"], disable=not TQDM_ENABLED):
         # We'll wrap this in a try/except block so that we can catch any errors that occur
         try:
@@ -111,11 +117,38 @@ def run_download_audio_job(
                 sleep_multiplier,
             )
 
+        # If we run into an AgeRestrictedError, then we'll print out a warning and add the video
+        except AgeRestrictedError as e:
+            logger.warning(
+                f"Video {video_url} is age-restricted. We won't download audio for it, and instead will add it to the `age_restricted` table."
+            )
+            gbq_utils.add_rows_to_table(
+                project_id=GBQ_PROJECT_ID,
+                dataset_id=GBQ_DATASET_ID,
+                table_id="age_restricted",
+                rows=[{"video_url": video_url}],
+                gbq_client=gbq_client,
+                logger=logger,
+            )
+            age_restricted_videos.append(video_url)
+            continue
+
         # If we run into an Exception, then we'll print out the traceback
         except Exception as e:
             logger.error(
                 f"Error downloading audio for {video_url}: '{e}'\nThe traceback is:\n{traceback.format_exc()}"
             )
+
+    # Now, we're going to remove the age-restricted videos from the videos_for_audio_parsing_df
+    videos_for_audio_parsing_df = videos_for_audio_parsing_df[
+        ~videos_for_audio_parsing_df["url"].isin(age_restricted_videos)
+    ]
+
+    # If, after removing the age-restricted videos, there aren't any videos left to download,
+    # then we'll log that and return
+    if len(videos_for_audio_parsing_df) == 0:
+        logger.info("No videos to download audio for. Exiting job...")
+        return
 
     # ======================
     # ULPAODING AUDIO TO GCS

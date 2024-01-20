@@ -34,6 +34,7 @@ def run_initialize_cloud_resources_job(
         "transcriptions",
         "enriched_video_metadata",
         "embeddings",
+        "age_restricted",
     ],
     buckets_to_create=[
         "neural-needledrop-audio",
@@ -106,9 +107,8 @@ def run_initialize_cloud_resources_job(
             project_id=GBQ_PROJECT_ID,
             gcs_client=gcs_client,
             delete_if_exists=delete_existing_buckets,
-            logger=logger
+            logger=logger,
         )
-        
 
     # Log success
     logger.info("Finished the INITIALIZE RESOURCES job.")
