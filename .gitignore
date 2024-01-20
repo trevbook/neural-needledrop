@@ -165,3 +165,7 @@ pipeline/temp_data/*
 *.m4a
 *.mp3
 pipeline/gcloud-service-key.json
+
+
+neural-needledrop-diagrams.pptx
+~$neural-needledrop-diagrams.pptx

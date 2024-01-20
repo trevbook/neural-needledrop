@@ -41,8 +41,10 @@ Eventually, I'll take care of this via a `Dockerfile`.
 
 ---
 
-## Running the Pipeline (DOCKER)
-I've created a Dockerized version of the pipeline that can be run using the following commands: 
+## Running the Pipeline (LOCALLY VIA DOCKER)
+I've created a Dockerized version of the pipeline that can be run using the following commands. 
+
+***NOTE:*** *These instructions assume you have a GCP service account key in `pipeline/gcloud-service-key.json`. Without this key, the pipeline will not work properly.*
 
 ```
 # Build the Docker image
@@ -51,5 +53,3 @@ docker build -t neural-needledrop-pipeline .
 # Run the Docker image
 docker run -it -e PYTHONBUFFERED=1 -e LOG_TO_CONSOLE=True -e TQDM_ENABLED=True -e OPENAI_API_KEY=[INSERT OPENAI API KEY] neural-needledrop-pipeline
 ```
-
-
