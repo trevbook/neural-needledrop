@@ -40,9 +40,10 @@ def run_embed_transcriptions_job(
     gcs_client=None,
     gbq_client=None,
     temp_download_directory="temp_embedding_data/",
-    max_parallel_embedding_workers=8,
-    max_parallel_upload_workers=16,
-    embedding_model="text-embedding-ada-002",
+    max_parallel_embedding_workers=4,
+    max_parallel_upload_workers=8,
+    max_videos_to_embed=100,
+    embedding_model="text-embedding-3-small",
 ):
     """
     This method will use the OpenAI API to embed transcriptions of YouTube videos.
@@ -71,16 +72,36 @@ def run_embed_transcriptions_job(
 
     # The query below will determine which transcriptions we need to embed
     transcriptions_to_embed_query = f"""
+    
+    WITH all_transcriptions_to_embed AS (
+        SELECT
+        transcript.*
+        FROM
+        `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.transcriptions` transcript
+        LEFT JOIN
+        `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.embeddings` embedding
+        ON
+        embedding.video_url = transcript.url
+        WHERE
+        embedding.id IS NULL
+    ),
+    
+    videos_to_embed AS (
+        SELECT
+        DISTINCT url
+        FROM
+        all_transcriptions_to_embed
+        LIMIT {max_videos_to_embed}
+    )
+    
     SELECT
-    transcript.*
+    all_transcriptions_to_embed.*
     FROM
-    `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.transcriptions` transcript
-    LEFT JOIN
-    `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.embeddings` embedding
+    all_transcriptions_to_embed
+    INNER JOIN
+    videos_to_embed
     ON
-    embedding.video_url = transcript.url
-    WHERE
-    embedding.id IS NULL
+    videos_to_embed.url = all_transcriptions_to_embed.url
     """
 
     # Execute the query

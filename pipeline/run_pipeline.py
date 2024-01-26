@@ -86,6 +86,7 @@ def neural_needledrop_pipeline():
         run_embed_transcriptions_job,
         gbq_client=gbq_client,
         gcs_client=gcs_client,
+        max_videos_to_embed=200
     )
 
     # Indicate that the pipeline is complete
