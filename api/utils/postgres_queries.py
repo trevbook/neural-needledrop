@@ -140,7 +140,9 @@ def retrieve_multiple_video_transcripts(video_ids, engine, logger=None):
     # Query the database
     all_transcripts_df = query_postgres(sql_query, engine, logger=logger)
 
-    all_transcripts_df['video_id'] = all_transcripts_df['url'].apply(lambda x: x.split('=')[-1])
+    all_transcripts_df["video_id"] = all_transcripts_df["url"].apply(
+        lambda x: x.split("=")[-1]
+    )
 
     # Return the dataframe containing all transcripts
     return all_transcripts_df
@@ -197,3 +199,71 @@ def retrieve_multiple_video_metadata(video_ids, engine, logger=None):
 
     # Return the dataframe
     return video_metadata_df
+
+
+def most_similar_embeddings_filtered(
+    embedding,
+    engine,
+    n=10,
+    release_date_filter=None,
+    video_type_filter=None,
+    review_score_filter=None,
+    logger=None,
+):
+    """
+    This helper method will determine the most similar embeddings to the input `embedding`.
+    The `n` parameter determines how many similar embeddings to return.
+    The `release_date_filter`, `video_type_filter`, and `review_score_filter` parameters are used to filter the results.
+    """
+
+    # Create the base query to find the most similar embeddings
+    most_similar_emb_query = f"""
+    SELECT embeddings.*, 1 - (embedding <-> '{embedding}') AS cos_sim
+    FROM embeddings
+    LEFT JOIN video_metadata
+    ON embeddings.url = video_metadata.url
+    """
+
+    # If the release date filter is not None, then we need to add it to the query
+    if release_date_filter is not None:
+        if release_date_filter[0] is None and release_date_filter[1] is not None:
+            # Filter for videos released before the second element of the list
+            release_date_query = f"publish_date <= '{release_date_filter[1]}'"
+        elif release_date_filter[0] is not None and release_date_filter[1] is not None:
+            # Filter for videos released between the two elements of the list
+            release_date_query = f"publish_date BETWEEN '{release_date_filter[0]}' AND '{release_date_filter[1]}'"
+        elif release_date_filter[0] is not None and release_date_filter[1] is None:
+            # Filter for videos released after the first element of the list
+            release_date_query = f"publish_date >= '{release_date_filter[0]}'"
+
+    # If the video_type_filter is not None, then we'll need to add it to the query.
+    # This video_type_filter will be a list, and we need to filter to the `video_type` column
+    if video_type_filter is not None:
+        video_type_query = f"video_type IN {tuple(video_type_filter)}"
+
+    # If the review_score_filter is not None, then we'll need to add it to the query.
+    if review_score_filter is not None:
+        review_score_query = f"review_score >= {review_score_filter}"
+
+    # Add the filters to the query
+    filters = []
+    if release_date_filter is not None:
+        filters.append(release_date_query)
+    if video_type_filter is not None:
+        filters.append(video_type_query)
+    if review_score_filter is not None:
+        filters.append(review_score_query)
+
+    if filters:
+        most_similar_emb_query += " WHERE " + " AND ".join(filters)
+
+    # Add the order and limit to the query
+    most_similar_emb_query += f" ORDER BY cos_sim DESC LIMIT {n};"
+
+    # Query the database
+    most_similar_embeddings_df = query_postgres(
+        most_similar_emb_query, engine, logger=logger
+    )
+
+    # Return the dataframe
+    return most_similar_embeddings_df
