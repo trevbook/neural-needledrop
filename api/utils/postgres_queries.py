@@ -11,7 +11,7 @@ pieces of data from the Postgres database.
 # General import statements
 import pandas as pd
 from pandas_gbq import read_gbq
-from sqlalchemy import create_engine, MetaData
+from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from tqdm import tqdm
 from pathlib import Path
@@ -113,16 +113,87 @@ def retrieve_multiple_video_transcripts(video_ids, engine, logger=None):
     This method retrieves the transcripts of multiple videos from the database using their IDs.
     """
 
-    # Initialize an empty dataframe to store all transcripts
-    all_transcripts_df = pd.DataFrame()
+    # Make all of the video IDs into URLs
+    video_urls = [
+        f"https://www.youtube.com/watch?v={video_id}" for video_id in video_ids
+    ]
 
-    # Loop through each video ID
-    for video_id in video_ids:
-        # Retrieve the transcript for the current video
-        video_transcript_df = retrieve_video_transcript(video_id, engine, logger)
+    # Create or replace a temporary table in Postgres for joining in video_urls
+    with engine.begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS temp_video_urls"))
+        conn.execute(text("CREATE TEMP TABLE temp_video_urls (url text)"))
+        for url in video_urls:
+            conn.execute(text(f"INSERT INTO temp_video_urls VALUES ('{url}')"))
+        conn.commit()
 
-        # Append the current transcript to the all_transcripts_df
-        all_transcripts_df = all_transcripts_df.append(video_transcript_df)
+    # Define the SQL query
+    sql_query = f"""
+        SELECT 
+            transcription.*
+        FROM transcriptions transcription
+        INNER JOIN temp_video_urls
+        ON transcription.url = temp_video_urls.url
+        ORDER BY 
+            segment_id ASC
+    """
+
+    # Query the database
+    all_transcripts_df = query_postgres(sql_query, engine, logger=logger)
+
+    all_transcripts_df['video_id'] = all_transcripts_df['url'].apply(lambda x: x.split('=')[-1])
 
     # Return the dataframe containing all transcripts
     return all_transcripts_df
+
+
+def retrieve_video_metadata(video_id, engine, logger=None):
+    """
+    This method retrieves the metadata of a video from the database using the video's ID.
+    """
+
+    # Define the video URL
+    video_url = f"https://www.youtube.com/watch?v={video_id}"
+
+    # Define the SQL query
+    sql_query = f"""
+        SELECT 
+            metadata.*
+        FROM video_metadata metadata
+        WHERE
+            url = '{video_url}'
+    """
+
+    # Query the database
+    video_metadata_df = query_postgres(sql_query, engine, logger=logger)
+
+    # Return the dataframe
+    return video_metadata_df
+
+
+def retrieve_multiple_video_metadata(video_ids, engine, logger=None):
+    """
+    This method retrieves the metadata of multiple videos from the database using their IDs.
+    """
+
+    # Create a temporary table in Postgres for joining in video_ids
+    with engine.connect() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS temp_video_ids"))
+        conn.execute(text("CREATE TEMP TABLE temp_video_ids (id text)"))
+        for video_id in video_ids:
+            conn.execute(text(f"INSERT INTO temp_video_ids VALUES ('{video_id}')"))
+        conn.commit()
+
+    # Define the SQL query
+    sql_query = f"""
+        SELECT 
+            metadata.*
+        FROM video_metadata metadata
+        INNER JOIN temp_video_ids
+        ON metadata.id = temp_video_ids.id
+    """
+
+    # Query the database
+    video_metadata_df = query_postgres(sql_query, engine, logger=logger)
+
+    # Return the dataframe
+    return video_metadata_df
