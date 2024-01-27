@@ -58,6 +58,7 @@ def neural_needledrop_pipeline():
         time_to_sleep_between_requests=2,
         sleep_time_multiplier=2.25,
         gbq_client=gbq_client,
+        n_days_to_not_scrape=7,
     )
 
     # Enrich the video metadata
@@ -76,7 +77,7 @@ def neural_needledrop_pipeline():
     # Transcribe the audio
     pipeline_job_wrapper(
         run_transcribe_audio_job,
-        n_max_to_transcribe=100,
+        n_max_to_transcribe=1,
         gbq_client=gbq_client,
         gcs_client=gcs_client,
     )

@@ -37,6 +37,7 @@ def run_download_video_metadata_job(
     gbq_client=None,
     time_to_sleep_between_requests=3,
     sleep_time_multiplier=2.5,
+    n_days_to_not_scrape=1,
 ):
     """
     This method will download metadata about YouTube videos
@@ -48,13 +49,45 @@ def run_download_video_metadata_job(
         name="pipeline.download_video_metadata", log_to_console=LOG_TO_CONSOLE
     )
 
-    # Log that we're starting the job, as well as some starting information
-    logger.info("Starting the DOWNLOAD VIDEO METADATA job.")
-    logger.info(f"Crawling channel {channel_url}.")
-
     # If the GBQ client isn't provided, create it
     if gbq_client is None:
         gbq_client = bigquery.Client(project=GBQ_PROJECT_ID)
+
+    # =============================
+    # DETERMINING WHETHER TO SCRAPE
+    # =============================
+    # Below, we'll determine whether or not we should scrape this channel.
+
+    # Log that we're starting the job, as well as some starting information
+    logger.info("Determining whether or not to scrape this channel.")
+
+    # Determine the most recent `scrape_date` field in the `video_metadata` table
+    try:
+        most_recent_date = (
+            pd.read_gbq(
+                f"SELECT scrape_date FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.video_metadata` ORDER BY scrape_date DESC LIMIT 1"
+            )
+            .iloc[0]
+            .scrape_date
+        )
+
+        # If today's date is within the timedelta, skip scraping
+        if (pd.Timestamp.now() - most_recent_date) < pd.Timedelta(
+            days=n_days_to_not_scrape
+        ):
+            skip_scraping = True
+        else:
+            skip_scraping = False
+
+    except Exception as e:
+        skip_scraping = False
+
+    # If we're skipping scraping, then we'll log that and exit
+    if skip_scraping:
+        logger.info(
+            f"Skipping scraping for channel {channel_url} because we've already scraped it within the last {n_days_to_not_scrape} days."
+        )
+        return
 
     # =================================
     # DETERMINING MOST RECENT VIDEO URL
@@ -62,6 +95,10 @@ def run_download_video_metadata_job(
     # Below, we'll figure out the most recent video that we've got data for
     # for this channel. We'll use this to determine which videos we need to
     # scrape.
+
+    # Log that we're starting the job, as well as some starting information
+    logger.info("Starting the DOWNLOAD VIDEO METADATA job.")
+    logger.info(f"Crawling channel {channel_url}.")
 
     # If we don't want to stop at the most recent video, then we'll set the most recent video to None
     if stop_at_most_recent_video is False:
