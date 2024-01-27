@@ -208,12 +208,14 @@ def most_similar_embeddings_filtered(
     release_date_filter=None,
     video_type_filter=None,
     review_score_filter=None,
+    include_text=False,
     logger=None,
 ):
     """
     This helper method will determine the most similar embeddings to the input `embedding`.
     The `n` parameter determines how many similar embeddings to return.
     The `release_date_filter`, `video_type_filter`, and `review_score_filter` parameters are used to filter the results.
+    If the `include_text` parameter is set to True, then the text of the video will be included in the results.
     """
 
     # Create the base query to find the most similar embeddings
@@ -243,7 +245,15 @@ def most_similar_embeddings_filtered(
 
     # If the review_score_filter is not None, then we'll need to add it to the query.
     if review_score_filter is not None:
-        review_score_query = f"review_score >= {review_score_filter}"
+        if review_score_filter[0] is None and review_score_filter[1] is not None:
+            # Filter for videos with review score at most the second element of the list
+            review_score_query = f"review_score <= {review_score_filter[1]}"
+        elif review_score_filter[0] is not None and review_score_filter[1] is not None:
+            # Filter for videos with review score between the two elements of the list
+            review_score_query = f"review_score BETWEEN {review_score_filter[0]} AND {review_score_filter[1]}"
+        elif review_score_filter[0] is not None and review_score_filter[1] is None:
+            # Filter for videos with review score at least the first element of the list
+            review_score_query = f"review_score >= {review_score_filter[0]}"
 
     # Add the filters to the query
     filters = []
@@ -261,9 +271,135 @@ def most_similar_embeddings_filtered(
     most_similar_emb_query += f" ORDER BY cos_sim DESC LIMIT {n};"
 
     # Query the database
-    most_similar_embeddings_df = query_postgres(
+    most_similar_embeddings_filtered_df = query_postgres(
         most_similar_emb_query, engine, logger=logger
     )
 
+    # If we want to include the text, then we'll need to query the database again
+    if include_text:
+        # Create a list of the video segments we need to fetch
+        video_segments_to_fetch_df_records = []
+        for row in most_similar_embeddings_filtered_df.itertuples():
+            start_segment = row.start_segment
+            end_segment = row.end_segment
+            for cur_segment in range(start_segment, end_segment):
+                video_segments_to_fetch_df_records.append(
+                    {
+                        "video_url": row.url,
+                        "embedding_id": row.id,
+                        "video_segment": cur_segment,
+                    }
+                )
+
+        # Create a DataFrame from this list of records
+        video_segments_to_fetch_df = pd.DataFrame(video_segments_to_fetch_df_records)
+
+        # Create a temporary table in Postgres for the video segments to fetch
+        from sqlalchemy.sql import text
+
+        # Upload the DataFrame to Postgres
+        with engine.connect() as conn:
+            conn.execute(text("DROP TABLE IF EXISTS text_segments_to_fetch"))
+            video_segments_to_fetch_df.to_sql(
+                "text_segments_to_fetch", conn, index=False, if_exists="replace"
+            )
+            conn.commit()
+
+        # Now, we're going to query all of the text
+        fetched_text_segments_df = query_postgres(
+            """
+            SELECT
+            transcriptions.*,
+            text_segments_to_fetch.embedding_id
+            FROM
+            transcriptions
+            JOIN
+            text_segments_to_fetch
+            ON
+            text_segments_to_fetch.video_url = transcriptions.url
+            """,
+            engine,
+        )
+
+        # Combine each of the text segments
+        combined_text_segment_df_records = []
+        for embedding_id in most_similar_embeddings_filtered_df["id"].unique():
+            # Determine the start and end segments for this embedding
+            embedding_df = most_similar_embeddings_filtered_df[
+                most_similar_embeddings_filtered_df["id"] == embedding_id
+            ]
+            start_segment = embedding_df["start_segment"].iloc[0]
+            end_segment = embedding_df["end_segment"].iloc[0]
+
+            # Filter the fetched text segments to only those for this embedding
+            embedding_text_segments_df = fetched_text_segments_df[
+                fetched_text_segments_df["embedding_id"] == embedding_id
+            ]
+
+            # Now, filter the text segments to only those that are within the start and end segments
+            embedding_text_segments_df = embedding_text_segments_df[
+                (embedding_text_segments_df["segment_id"] >= start_segment)
+                & (embedding_text_segments_df["segment_id"] < end_segment)
+            ]
+
+            # Sort by the segment ID, and deduplicate the text segments
+            embedding_text_segments_df = embedding_text_segments_df.sort_values(
+                "segment_id"
+            ).drop_duplicates("segment_id")
+
+            # Now, combine the text segments into a single string
+            combined_text = " ".join(
+                [x.strip() for x in embedding_text_segments_df["text"].values]
+            )
+
+            # Add the combined text to the list of records
+            combined_text_segment_df_records.append(
+                {"id": embedding_id, "text": combined_text}
+            )
+
+        # Make a DataFrame from this list of records
+        combined_text_segment_df = pd.DataFrame(combined_text_segment_df_records)
+
+        # Now, delete the temporary table
+        with engine.connect() as conn:
+            conn.execute(text("DROP TABLE IF EXISTS text_segments_to_fetch"))
+            conn.commit()
+
+        # Merge in the combined text segments
+        most_similar_embeddings_filtered_df = most_similar_embeddings_filtered_df.merge(
+            combined_text_segment_df, on="id", how="left"
+        )
+
     # Return the dataframe
+    return most_similar_embeddings_filtered_df
+
+
+def most_similar_embeddings_to_text_filtered(
+    text,
+    engine,
+    n=5,
+    release_date_filter=None,
+    video_type_filter=None,
+    review_score_filter=None,
+    model="text-embedding-3-small",
+    include_text=False,
+    logger=None,
+):
+    # Get the embedding of the text
+    query_embedding = embed_text(
+        text, model=model,
+    )
+
+    # Call the most_similar_embeddings method
+    most_similar_embeddings_df = most_similar_embeddings_filtered(
+        query_embedding,
+        engine,
+        n=n,
+        release_date_filter=release_date_filter,
+        video_type_filter=video_type_filter,
+        review_score_filter=review_score_filter,
+        include_text=include_text,
+        logger=logger,
+    )
+
     return most_similar_embeddings_df
