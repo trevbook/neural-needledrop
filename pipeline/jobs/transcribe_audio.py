@@ -35,6 +35,7 @@ def run_transcribe_audio_job(
     gbq_client=None,
     temp_download_directory="temp_audio_data/",
     whisper_model_size="tiny",
+    max_length_in_minutes=20,
 ):
     """
     This method will run the transcribe audio job.
@@ -67,6 +68,8 @@ def run_transcribe_audio_job(
     # ===============================
     # The code below will determine which audio we need to transcribe
 
+    max_length_in_seconds = max_length_in_minutes * 60
+
     # This query will determine all of the videos we need to transcribe
     videos_for_transcription_query = f"""
     SELECT
@@ -78,8 +81,14 @@ def run_transcribe_audio_job(
     `backend_data.transcriptions` transcript
     ON
     audio.video_url = transcript.url
+    LEFT JOIN
+    `backend_data.video_metadata` video
+    ON
+    audio.video_url = video.url
     WHERE
     transcript.created_at IS NULL
+    AND
+    video.length < {max_length_in_seconds}
     LIMIT {n_max_to_transcribe}
     """
 
@@ -141,7 +150,6 @@ def run_transcribe_audio_job(
     for child_file in tqdm(
         list(Path(temp_download_directory).iterdir()), disable=not TQDM_ENABLED
     ):
-        
         # We're going to wrap this in a try/except block so that we can catch any errors that occur
         try:
             if child_file.suffix != ".mp3":
