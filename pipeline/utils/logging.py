@@ -24,7 +24,7 @@ options = {
     "ERROR": logging.ERROR,
     "CRITICAL": logging.CRITICAL,
 }
-LOGGING_LEVEL = os.environ.get("LOG_LEVEL", "DEBUG")
+LOGGING_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
 # Instantiate a Google Cloud Logging client
 client = cloud_logging.Client(project=GBQ_PROJECT_ID)

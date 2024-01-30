@@ -58,7 +58,7 @@ def neural_needledrop_pipeline():
         time_to_sleep_between_requests=2,
         sleep_time_multiplier=2.25,
         gbq_client=gbq_client,
-        n_days_to_not_scrape=1,
+        n_days_to_not_scrape=3,
     )
 
     # Enrich the video metadata
@@ -87,7 +87,7 @@ def neural_needledrop_pipeline():
         run_embed_transcriptions_job,
         gbq_client=gbq_client,
         gcs_client=gcs_client,
-        max_videos_to_embed=10,
+        max_videos_to_embed=50,
     )
 
     # Indicate that the pipeline is complete

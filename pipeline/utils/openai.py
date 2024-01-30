@@ -102,7 +102,7 @@ def embed_text_list(
         token_amt = approximate_token_amt(text)
 
         # Determine how long we should sleep, given the number of tokens and workers
-        sleep_time_multiplier = 1.35
+        sleep_time_multiplier = 2
         sleep_time = (
             (token_amt / DEFAULT_TOKENS_PER_MINUTE)
             * 60
