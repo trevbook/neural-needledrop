@@ -220,7 +220,7 @@ def most_similar_embeddings_filtered(
 
     # Create the base query to find the most similar embeddings
     most_similar_emb_query = f"""
-    SELECT embeddings.*, 1 - (embedding <-> '{embedding}') AS cos_sim
+    SELECT embeddings.*, 1 - (embedding <=> '{embedding}') AS cos_sim
     FROM embeddings
     LEFT JOIN video_metadata
     ON embeddings.url = video_metadata.url

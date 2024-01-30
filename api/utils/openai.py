@@ -59,7 +59,7 @@ def embed_text(text, model="text-embedding-3-small", max_tokens_before_truncatio
 
         # Use the OpenAI library to generate an embedding
         embedding_object = openai.embeddings.create(
-            input="Hey, this is some input text", model="text-embedding-3-small"
+            input=text, model="text-embedding-3-small"
         )
 
         # Extract the raw embedding
