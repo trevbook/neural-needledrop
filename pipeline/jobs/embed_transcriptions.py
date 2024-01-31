@@ -44,6 +44,7 @@ def run_embed_transcriptions_job(
     max_parallel_upload_workers=8,
     max_videos_to_embed=100,
     embedding_model="text-embedding-3-small",
+    segment_chunk_sizes=[3],
 ):
     """
     This method will use the OpenAI API to embed transcriptions of YouTube videos.
@@ -117,10 +118,7 @@ def run_embed_transcriptions_job(
     # CHUNKING TRANSCRIPTIONS
     # =======================
     # Next up: I'm going to chunk the transcription segments together. This ensures
-    # that there's a decent amount of context for the model to work with in each embedding.
-
-    # Define the segment chunk sizes
-    segment_chunk_sizes = [4, 8]
+    # that there's a decent amount of context for the model to work with in each embedding
 
     # Initialize a list to hold the segment_chunk rows
     segment_chunks = []
