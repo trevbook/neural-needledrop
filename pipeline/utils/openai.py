@@ -29,8 +29,8 @@ CHAR_PER_TOKEN_ESTIMATE = 3.5
 
 
 # Helper function to calculate delay between requests
-def calculate_delay(requests_per_minute, delay_multiplier=2):
-    return (60 / requests_per_minute) * delay_multiplier
+def calculate_delay(requests_per_minute, n_workers, delay_multiplier=2):
+    return ((60 / requests_per_minute) * n_workers) * delay_multiplier
 
 
 def approximate_token_amt(text):
@@ -93,10 +93,10 @@ def embed_text_list(
     """
 
     # Calculate the delay needed to respect the requests_per_minute limit
-    delay = calculate_delay(requests_per_minute)
+    delay = calculate_delay(requests_per_minute, n_workers=max_workers)
 
     # The wrapper function to embed text with retries
-    @retry(wait=wait_fixed(delay), stop=stop_after_attempt(3))
+    @retry(wait=wait_fixed(delay * 2), stop=stop_after_attempt(3))
     def embed_with_retry(text):
         # Estimate the number of tokens in the text
         token_amt = approximate_token_amt(text)
@@ -108,7 +108,7 @@ def embed_text_list(
             * 60
             * sleep_time_multiplier
             * max_workers
-        )
+        ) + delay
 
         # Try and embed the text
         try:

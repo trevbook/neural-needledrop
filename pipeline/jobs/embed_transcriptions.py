@@ -40,7 +40,7 @@ def run_embed_transcriptions_job(
     gcs_client=None,
     gbq_client=None,
     temp_download_directory="temp_embedding_data/",
-    max_parallel_embedding_workers=8,
+    max_parallel_embedding_workers=6,
     max_parallel_upload_workers=8,
     max_videos_to_embed=100,
     embedding_model="text-embedding-3-small",
