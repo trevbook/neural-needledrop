@@ -11,3 +11,10 @@ I'm using Poetry to manage my Python dependencies. In order to install them, you
 pip install poetry
 poetry install --no-root
 ```
+
+---
+## Running the API Locally
+
+```
+uvicorn api:app --reload --host 0.0.0.0 --port 8000
+```

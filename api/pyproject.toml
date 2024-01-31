@@ -9,6 +9,8 @@ readme = "README.md"
 python = "^3.11"
 pandas = "^2.1.4"
 google-cloud-bigquery = "^3.14.1"
+fastapi = "^0.109.0"
+uvicorn = "^0.27.0.post1"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
