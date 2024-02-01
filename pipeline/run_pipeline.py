@@ -95,6 +95,6 @@ def neural_needledrop_pipeline():
 
 
 # If this script is being run from the command line, then run the
-# pipeline
+# pipeline 
 if __name__ == "__main__":
     neural_needledrop_pipeline()
