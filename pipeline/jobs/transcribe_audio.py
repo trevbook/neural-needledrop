@@ -90,6 +90,7 @@ def run_transcribe_audio_job(
     AND
     video.length < {max_length_in_seconds}
     LIMIT {n_max_to_transcribe}
+    ORDER BY video.length ASC
     """
 
     # Execute the query
