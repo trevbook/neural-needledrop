@@ -96,7 +96,7 @@ def embed_text_list(
     delay = calculate_delay(requests_per_minute, n_workers=max_workers)
 
     # The wrapper function to embed text with retries
-    @retry(wait=wait_fixed(delay * 2), stop=stop_after_attempt(3))
+    @retry(wait=wait_fixed(delay * 4), stop=stop_after_attempt(3))
     def embed_with_retry(text):
         # Estimate the number of tokens in the text
         token_amt = approximate_token_amt(text)
@@ -113,8 +113,13 @@ def embed_text_list(
         # Try and embed the text
         try:
             embedding = embed_text(text, model)
-        except Exception:
-            embedding = None
+        
+        # If there's an Exception, we're going to raise an Exception, log a debug statement, 
+        # and try to trigger the retry
+        except Exception as e:
+            raise Exception(
+                f"Error embedding text '{text}': '{e}'\nTraceback is as follows:\n{traceback.format_exc()}"
+            )
 
         # Now, sleep for the appropriate amount of time
         time.sleep(sleep_time)
@@ -140,7 +145,10 @@ def embed_text_list(
         # Collect the results maintaining the order
         results = []
         for future in futures_iterator:
-            results.append(future.result())
+            try:
+                results.append(future.result())
+            except Exception as e:
+                results.append(None)
 
     return results
 

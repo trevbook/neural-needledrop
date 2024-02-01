@@ -46,7 +46,7 @@ def neural_search(
     n_segment_chunks_to_showcase=3,
 ):
     """
-    This method will run some neural search on the database. It will return a list of videos that are most similar to the query,
+    This method will run some neural search http://0.0.0.0:8000on the database. It will return a list of videos that are most similar to the query,
     with some of the most similar text chunks from those videos.
     """
 
