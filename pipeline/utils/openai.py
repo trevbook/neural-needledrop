@@ -17,6 +17,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tenacity import retry, wait_fixed, stop_after_attempt
 import numpy as np
 
+# Importing proprietary modules
+from utils.logging import get_dummy_logger
+
 # Declaring some constants that'll help with the rate limiting
 DEFAULT_REQUESTS_PER_MINUTE = 3000
 DEFAULT_TOKENS_PER_MINUTE = 1000000
@@ -84,13 +87,18 @@ def embed_text_list(
     text_list,
     requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE,
     model="text-embedding-3-small",
-    max_workers=8,
+    max_workers=3,
     show_progress=True,
+    logger=None,
 ):
     """
     This method will embed a list of texts, and return a list of embeddings.
     It uses ThreadPoolExecutor and tenacity for parallel execution and retrying.
     """
+
+    # If the logger is None, we'll set up a dummy logger
+    if logger is None:
+        logger = get_dummy_logger()
 
     # Calculate the delay needed to respect the requests_per_minute limit
     delay = calculate_delay(requests_per_minute, n_workers=max_workers)
@@ -113,10 +121,13 @@ def embed_text_list(
         # Try and embed the text
         try:
             embedding = embed_text(text, model)
-        
-        # If there's an Exception, we're going to raise an Exception, log a debug statement, 
+
+        # If there's an Exception, we're going to raise an Exception, log a debug statement,
         # and try to trigger the retry
         except Exception as e:
+            logger.error(
+                f"Error embedding text '{text}': '{e}'\nTraceback is as follows:\n{traceback.format_exc()}"
+            )
             raise Exception(
                 f"Error embedding text '{text}': '{e}'\nTraceback is as follows:\n{traceback.format_exc()}"
             )

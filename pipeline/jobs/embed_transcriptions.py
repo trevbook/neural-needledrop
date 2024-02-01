@@ -40,7 +40,7 @@ def run_embed_transcriptions_job(
     gcs_client=None,
     gbq_client=None,
     temp_download_directory="temp_embedding_data/",
-    max_parallel_embedding_workers=6,
+    max_parallel_embedding_workers=3,
     max_parallel_upload_workers=8,
     max_videos_to_embed=100,
     embedding_model="text-embedding-3-small",
@@ -181,6 +181,7 @@ def run_embed_transcriptions_job(
         show_progress=TQDM_ENABLED,
         max_workers=max_parallel_embedding_workers,
         model=embedding_model,
+        logger=logger
     )
 
     # Add this column containing all of the embeddings to the segment_chunks_df

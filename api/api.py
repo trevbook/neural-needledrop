@@ -33,15 +33,19 @@ app.add_middleware(
 # =========
 # Next, we're going to define each of the app's endpoints
 
+# Define a Pydantic model for the search request body
+class SearchRequest(BaseModel):
+    query: str
+    search_type: str = "neural"
 
 @app.post("/search")
-def search(query: str, search_type: str = "neural"):
+def search(search_request: SearchRequest):
     """
     This is the search endpoint.
     """
 
     # If the user wants neural search, then we'll run this.
-    if search_type == "neural":
+    if search_request.search_type == "neural":
         return search_utils.neural_search(
-            query=query,
+            query=search_request.query,
         )
