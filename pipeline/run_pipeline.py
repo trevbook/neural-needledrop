@@ -77,7 +77,7 @@ def neural_needledrop_pipeline():
     # Transcribe the audio
     pipeline_job_wrapper(
         run_transcribe_audio_job,
-        n_max_to_transcribe=4,
+        n_max_to_transcribe=5,
         gbq_client=gbq_client,
         gcs_client=gcs_client,
     )
@@ -87,7 +87,7 @@ def neural_needledrop_pipeline():
         run_embed_transcriptions_job,
         gbq_client=gbq_client,
         gcs_client=gcs_client,
-        max_videos_to_embed=30,
+        max_videos_to_embed=50,
     )
 
     # Indicate that the pipeline is complete
@@ -95,6 +95,6 @@ def neural_needledrop_pipeline():
 
 
 # If this script is being run from the command line, then run the
-# pipeline 
+# pipeline
 if __name__ == "__main__":
     neural_needledrop_pipeline()
