@@ -1,0 +1,39 @@
+/* 
+    ==========
+    SearchPage
+    ==========
+*/
+
+.formStyle {
+  width: 65%;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+  .formStyle {
+    width: 95%;
+  }
+}
+
+.textInputStyle {
+  width: 88%;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+  .textInputStyle {
+    width: 78%;
+  }
+}
+
+.buttonStyle {
+  width: 10%;
+}
+
+@media (max-width: 768px) {
+  .buttonStyle {
+    width: 20%;
+  }
+}

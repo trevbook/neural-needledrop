@@ -19,6 +19,7 @@ import { MantineProvider } from "@mantine/core";
 // Importing different pages
 import SearchPage from "./pages/SearchPage";
 import ResultsPage from "./pages/ResultsPage";
+import "./App.css"
 
 /**
  * =====

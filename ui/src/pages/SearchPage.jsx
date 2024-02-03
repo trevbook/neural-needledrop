@@ -13,6 +13,7 @@ import React, { useState, useEffect } from "react";
 import { Center, TextInput, Button } from "@mantine/core";
 import appLogo from "../assets/app-logo.png"; // Make sure the path is correct
 import { performSearch } from "../api";
+import { Search } from "tabler-icons-react";
 
 /**
  * ========
@@ -27,7 +28,7 @@ function SearchPage() {
 
   useEffect(() => {
     if (submitSearch && searchTerm) {
-        console.log(searchTerm)
+      console.log(searchTerm);
       performSearch(searchTerm).then((results) => {
         console.log(results);
         setSubmitSearch(false); // Reset the submit state after search
@@ -55,22 +56,25 @@ function SearchPage() {
         height: "70vh",
       }}
     >
-      <Center style={{ flexDirection: "column" }}>
+      <Center style={{ flexDirection: "column", width: "80%" }}>
         <img
           src={appLogo}
           alt="Neural Needledrop Logo"
           style={{ height: `${15}vh` }}
         />
-        <h1>Neural Needledrop</h1>
-        <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: "5px" }}>
+          <h1>Neural Needledrop</h1>
+        </div>
+        <form onSubmit={handleSubmit} className="formStyle">
           <TextInput
             value={searchTerm}
             onChange={handleSearchChange}
-            placeholder="Enter search term"
+            placeholder="Enter search query"
             required
+            className="textInputStyle"
           />
-          <Button type="submit" disabled={!searchTerm}>
-            Search
+          <Button className="buttonStyle" type="submit" disabled={!searchTerm}>
+            <Search size={20} />
           </Button>
         </form>
       </Center>
