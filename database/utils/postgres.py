@@ -101,7 +101,7 @@ def query_postgres(query, engine, logger=None):
             conn.rollback()
             raise e
 
-def upload_to_table(data_frame, table, engine, logger=None):
+def upload_to_table(data_frame, table, engine, logger=None, chunksize=10000):
     """
     This function will upload the contents of a pandas DataFrame to a particular table in our Postgres database.
     """
@@ -112,7 +112,7 @@ def upload_to_table(data_frame, table, engine, logger=None):
 
     # Upload the DataFrame
     try:
-        data_frame.to_sql(table, engine, if_exists='append', index=False)
+        data_frame.to_sql(table, engine, if_exists='append', index=False, chunksize=chunksize)
         logger.debug(f"Successfully uploaded data to table '{table}'")
     except Exception as e:
         logger.error(f"Error uploading data to table '{table}': {e}")
