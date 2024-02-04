@@ -8,6 +8,7 @@ This file contains some utility functions for interacting with Google BigQuery.
 
 # Import packages
 import uuid
+from tqdm import tqdm
 from google.cloud import bigquery
 
 # Import custom utils
@@ -131,7 +132,13 @@ def create_table(
 
 
 def add_rows_to_table(
-    project_id, dataset_id, table_id, rows, gbq_client=None, logger=None
+    project_id,
+    dataset_id,
+    table_id,
+    rows,
+    gbq_client=None,
+    logger=None,
+    max_rows_per_request=1000,
 ):
     """
     Add rows to a table in BigQuery.
@@ -150,15 +157,27 @@ def add_rows_to_table(
     dataset_ref = gbq_client.dataset(dataset_id)
     table_ref = dataset_ref.table(table_id)
     table = gbq_client.get_table(table_ref)
-    errors = gbq_client.insert_rows(table, rows)
-    if errors == []:
-        logger.debug(
-            f"Added {len(rows):,} rows to table {project_id}.{dataset_id}.{table_id}"
-        )
-    else:
-        logger.debug(
-            f"Encountered errors while adding rows to table {project_id}.{dataset_id}.{table_id}: {errors}"
-        )
+
+    # Split rows into chunks
+    row_chunks = [
+        rows[i : i + max_rows_per_request]
+        for i in range(0, len(rows), max_rows_per_request)
+    ]
+
+    # Initialize progress bar
+    if TQDM_ENABLED:
+        row_chunks = tqdm(row_chunks, desc="Adding rows to table")
+
+    for chunk in row_chunks:
+        errors = gbq_client.insert_rows(table, chunk)
+        if errors == []:
+            logger.debug(
+                f"Added {len(chunk):,} rows to table {project_id}.{dataset_id}.{table_id}"
+            )
+        else:
+            logger.debug(
+                f"Encountered errors while adding rows to table {project_id}.{dataset_id}.{table_id}: {errors}"
+            )
 
 
 def create_temporary_table_in_gbq(

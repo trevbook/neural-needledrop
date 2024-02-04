@@ -12,8 +12,8 @@
 import React, { useState, useEffect } from "react";
 import { Center, TextInput, Button } from "@mantine/core";
 import appLogo from "../assets/app-logo.png"; // Make sure the path is correct
-import { performSearch } from "../api";
 import { Search } from "tabler-icons-react";
+import { useNavigate  } from "react-router-dom";
 
 /**
  * ========
@@ -23,28 +23,14 @@ import { Search } from "tabler-icons-react";
  */
 
 function SearchPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [submitSearch, setSubmitSearch] = useState(false);
+  // This state will hold the search query
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    if (submitSearch && searchTerm) {
-      console.log(searchTerm);
-      performSearch(searchTerm).then((results) => {
-        console.log(results);
-        setSubmitSearch(false); // Reset the submit state after search
-      });
-    }
-  }, [submitSearch, searchTerm]);
+  const navigate = useNavigate ();
 
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleSubmit = (event) => {
+  const handleSearch = (event) => {
     event.preventDefault();
-    if (searchTerm) {
-      setSubmitSearch(true);
-    }
+    navigate(`/results?query=${searchQuery}`);
   };
 
   return (
@@ -65,15 +51,15 @@ function SearchPage() {
         <div style={{ marginBottom: "5px" }}>
           <h1>Neural Needledrop</h1>
         </div>
-        <form onSubmit={handleSubmit} className="formStyle">
+        <form className="formStyle" onSubmit={handleSearch}>
           <TextInput
-            value={searchTerm}
-            onChange={handleSearchChange}
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Enter search query"
             required
             className="textInputStyle"
           />
-          <Button className="buttonStyle" type="submit" disabled={!searchTerm}>
+          <Button className="buttonStyle" type="submit" disabled={!searchQuery}>
             <Search size={20} />
           </Button>
         </form>

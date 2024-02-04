@@ -88,7 +88,7 @@ def neural_needledrop_pipeline():
         gbq_client=gbq_client,
         gcs_client=gcs_client,
         max_videos_to_embed=40,
-    )
+    ) 
 
     # Indicate that the pipeline is complete
     logger.info("NEURAL NEEDLEDROP PIPELINE COMPLETE.")

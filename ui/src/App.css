@@ -37,3 +37,23 @@
     width: 20%;
   }
 }
+
+/* 
+    ===========
+    ResultsPage
+    ===========
+*/
+
+.thumbnail-container {
+  width: 640px; /* Width of the thumbnail */
+  height: 360px; /* Height you want to display, excluding black bars */
+  position: relative; /* Needed to position the image correctly */
+  border: 3px solid black;
+}
+
+.thumbnail-container img {
+  width: 635px;
+  height: 355px; /* Original height of the thumbnail */
+  object-fit: none; /* Do not resize the image */
+  object-position: center -61px; /* Center the image vertically */
+}

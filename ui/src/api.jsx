@@ -16,15 +16,16 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const performSearch = async (searchQuery) => {
+
+    console.log("Running search with query:", searchQuery)
+
   try {
     const response = await axios.post(`${API_BASE_URL}/search`, {
       query: searchQuery,
       search_type: "neural",
     });
-    console.log("Search response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error during search:", error.response || error);
     throw error;
   }
 };

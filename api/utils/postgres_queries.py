@@ -301,10 +301,14 @@ def most_similar_embeddings_filtered(
 
         # Create a temporary table in Postgres for the video segments to fetch
         from sqlalchemy.sql import text
+        
+        # Drop the table if it exists
+        with engine.connect() as conn:
+            conn.execute(text("DROP TABLE IF EXISTS text_segments_to_fetch"))
+            conn.commit()
 
         # Upload the DataFrame to Postgres
         with engine.connect() as conn:
-            conn.execute(text("DROP TABLE IF EXISTS text_segments_to_fetch"))
             video_segments_to_fetch_df.to_sql(
                 "text_segments_to_fetch", conn, index=False, if_exists="replace"
             )
