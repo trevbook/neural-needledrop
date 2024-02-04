@@ -170,3 +170,4 @@ pipeline/gcloud-service-key.json
 neural-needledrop-diagrams.pptx
 ~$neural-needledrop-diagrams.pptx
 database/data/*
+*.npy

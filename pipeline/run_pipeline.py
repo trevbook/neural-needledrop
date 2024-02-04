@@ -82,7 +82,7 @@ def neural_needledrop_pipeline():
         gcs_client=gcs_client,
     )
 
-    # Embed the transcriptions
+    # Embed the transcriptions 
     pipeline_job_wrapper(
         run_embed_transcriptions_job,
         gbq_client=gbq_client,
