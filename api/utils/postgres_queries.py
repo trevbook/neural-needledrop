@@ -51,8 +51,8 @@ def most_similar_embeddings(embedding, engine, n=10, logger=None):
 
     # Create the query to find the most similar embeddings
     most_similar_emb_query = f"""
-    SELECT *, 1 - (embedding <-> '{embedding}') AS cos_sim
-    FROM embeddings ORDER BY cos_sim DESC LIMIT {n};
+    SELECT *, 1 - (embedding <=> '{embedding}') AS cos_sim
+    FROM embeddings ORDER BY cos_sim LIMIT {n};
     """
 
     # Query the database
@@ -205,6 +205,7 @@ def most_similar_embeddings_filtered(
     embedding,
     engine,
     n=10,
+    nearest_neighbors_to_screen=10000,
     release_date_filter=None,
     video_type_filter=None,
     review_score_filter=None,
@@ -220,13 +221,30 @@ def most_similar_embeddings_filtered(
 
     # Create the base query to find the most similar embeddings
     most_similar_emb_query = f"""
+    
+    WITH 
+      nearest_embeddings AS (
+          SELECT
+              embeddings.id
+          FROM
+                embeddings
+          ORDER BY
+                (embedding <=> '{embedding}')
+          LIMIT {nearest_neighbors_to_screen}
+      )
+    
     SELECT 
         embeddings.id,
         embeddings.url,
         embeddings.start_segment,
         embeddings.end_segment,
         1 - (embedding <=> '{embedding}') AS cos_sim
-    FROM embeddings
+    FROM
+    nearest_embeddings
+    JOIN 
+    embeddings
+    ON
+    nearest_embeddings.id = embeddings.id
     LEFT JOIN video_metadata
     ON embeddings.url = video_metadata.url
     """
@@ -301,7 +319,7 @@ def most_similar_embeddings_filtered(
 
         # Create a temporary table in Postgres for the video segments to fetch
         from sqlalchemy.sql import text
-        
+
         # Drop the table if it exists
         with engine.connect() as conn:
             conn.execute(text("DROP TABLE IF EXISTS text_segments_to_fetch"))
@@ -396,7 +414,8 @@ def most_similar_embeddings_to_text_filtered(
 ):
     # Get the embedding of the text
     query_embedding = embed_text(
-        text, model=model,
+        text,
+        model=model,
     )
 
     # Call the most_similar_embeddings method

@@ -10,6 +10,7 @@ This file contains some functions that're related to searching for particular vi
 # General import statements
 import pandas as pd
 import datetime
+from time import time
 
 # Importing custom modules
 from utils.settings import (
@@ -51,6 +52,7 @@ def neural_search(
     """
 
     # Run the query
+    start_time = time()
     similar_chunks_df = pg_queries.most_similar_embeddings_to_text_filtered(
         text=query,
         engine=engine,
@@ -60,8 +62,11 @@ def neural_search(
         review_score_filter=review_score_filter,
         include_text=True,
     )
+    total_time = time() - start_time
+    print(f"Total time to run query: {total_time} seconds.")
 
     # Groupby `url`, and take the top `n_most_similar_chunks_per_video` chunks per video
+    start_time = time()
     aggregated_similar_chunks_df = similar_chunks_df.groupby("url").head(
         n_most_similar_chunks_per_video
     )
@@ -86,8 +91,11 @@ def neural_search(
     aggregated_similar_chunks_df = aggregated_similar_chunks_df.sort_values(
         "weighted_median_similarity", ascending=False
     ).head(n_videos_to_return)
+    total_time = time() - start_time
+    print(f"Total time to aggregate and sort: {total_time} seconds.")
 
     # Create a temporary table called `temp_similar_chunks` that is the aggregated_similar_chunks_df DataFrame
+    start_time = time()
     with engine.connect() as conn:
         aggregated_similar_chunks_df.to_sql(
             "temp_similar_chunks", conn, if_exists="replace", index=False
@@ -133,6 +141,8 @@ def neural_search(
     segment_chunks_to_showcase_df = segment_chunks_to_showcase_df.merge(
         similar_chunks_video_metadata_df, on="url"
     ).sort_values("weighted_median_similarity", ascending=False)
+    total_time = time() - start_time
+    print(f"Total time to get video metadata: {total_time} seconds.")
 
     # Return the DataFrame as a list of dictionaries
     return segment_chunks_to_showcase_df.to_json(orient="records")

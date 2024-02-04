@@ -71,10 +71,10 @@ def create_table(table_name, schema, engine, metadata, logger=None):
 
         # Create the table
         metadata.create_all(engine)
-        
+
         # Log success
         logger.debug(f"Successfully created table '{table_name}'")
-        
+
     except Exception as e:
         logger.error(f"Error creating table '{table_name}': {e}")
         raise e
@@ -93,13 +93,24 @@ def query_postgres(query, engine, logger=None):
     # Execute the query
     with engine.connect() as conn:
         try:
-            result = pd.read_sql_query(query, conn)
-            logger.debug(f"Successfully executed query: {query}")
-            return result
+            if query.upper().startswith(
+                ("SET", "CREATE", "DROP", "INSERT", "UPDATE", "DELETE")
+            ):
+                # If it's a command that modifies the database, use the execute method
+                conn.begin()
+                conn.execute(text(query))
+                conn.commit()
+                logger.debug(f"Successfully executed command: {query}")
+            else:
+                # If it's a SELECT query, use the read_sql_query method
+                result = pd.read_sql_query(query, conn)
+                logger.debug(f"Successfully executed query: {query}")
+                return result
         except Exception as e:
             logger.error(f"Error executing query '{query}': {e}")
             conn.rollback()
             raise e
+
 
 def upload_to_table(data_frame, table, engine, logger=None, chunksize=10000):
     """
@@ -112,7 +123,9 @@ def upload_to_table(data_frame, table, engine, logger=None, chunksize=10000):
 
     # Upload the DataFrame
     try:
-        data_frame.to_sql(table, engine, if_exists='append', index=False, chunksize=chunksize)
+        data_frame.to_sql(
+            table, engine, if_exists="append", index=False, chunksize=chunksize
+        )
         logger.debug(f"Successfully uploaded data to table '{table}'")
     except Exception as e:
         logger.error(f"Error uploading data to table '{table}': {e}")
