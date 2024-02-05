@@ -41,15 +41,24 @@ def neural_search(
     release_date_filter=None,
     video_type_filter=None,
     review_score_filter=None,
-    n_chunks_to_consider_initially=250,
-    n_most_similar_chunks_per_video=10,
+    n_chunks_to_consider_initially=1500,
+    n_most_similar_chunks_per_video=5,
     n_videos_to_return=10,
     n_segment_chunks_to_showcase=3,
+    min_similar_chunks=2,
+    nearest_neighbors_to_screen=5000,
+    ivfflat_probes=50,
 ):
     """
-    This method will run some neural search http://0.0.0.0:8000on the database. It will return a list of videos that are most similar to the query,
+    This method will run some neural search on the database. It will return a list of videos that are most similar to the query,
     with some of the most similar text chunks from those videos.
     """
+
+    # First, we're going to set the probes
+    postgres.query_postgres(f"SET ivfflat.probes = {ivfflat_probes}", engine=engine)
+    postgres.query_postgres(
+        f"SET hnsw.efSearch = {nearest_neighbors_to_screen}", engine=engine
+    )
 
     # Run the query
     start_time = time()
@@ -57,13 +66,14 @@ def neural_search(
         text=query,
         engine=engine,
         n=n_chunks_to_consider_initially,
+        nearest_neighbors_to_screen=nearest_neighbors_to_screen,
         release_date_filter=release_date_filter,
         video_type_filter=video_type_filter,
         review_score_filter=review_score_filter,
-        include_text=True,
+        include_text=False,
     )
     total_time = time() - start_time
-    print(f"Total time to run query: {total_time} seconds.")
+    print(f"Total time to get similar chunks: {total_time} seconds.")
 
     # Groupby `url`, and take the top `n_most_similar_chunks_per_video` chunks per video
     start_time = time()
@@ -76,9 +86,23 @@ def neural_search(
         aggregated_similar_chunks_df.groupby("url")
         .agg(
             median_similarity=("cos_sim", "median"),
+            average_similarity=("cos_sim", "mean"),
             n_similar_chunks=("cos_sim", "count"),
+            max_similarity=("cos_sim", "max"),
         )
         .reset_index()
+    )
+
+    # Add a z-score column for the maximum similarity
+    aggregated_similar_chunks_df["cos_sim_z_score"] = (
+        aggregated_similar_chunks_df["max_similarity"]
+        - aggregated_similar_chunks_df["max_similarity"].mean()
+    ) / aggregated_similar_chunks_df["max_similarity"].std()
+
+    # Add a weighted z-score median similarity column
+    aggregated_similar_chunks_df["weighted_z_score"] = (
+        aggregated_similar_chunks_df["cos_sim_z_score"]
+        * aggregated_similar_chunks_df["n_similar_chunks"]
     )
 
     # Add a weighted median similarity column
@@ -88,9 +112,11 @@ def neural_search(
     )
 
     # Sort by the weighted median similarity
-    aggregated_similar_chunks_df = aggregated_similar_chunks_df.sort_values(
-        "weighted_median_similarity", ascending=False
-    ).head(n_videos_to_return)
+    aggregated_similar_chunks_df = (
+        aggregated_similar_chunks_df.sort_values("weighted_z_score", ascending=False)
+        .query("n_similar_chunks >= @min_similar_chunks")
+        .head(n_videos_to_return)
+    )
     total_time = time() - start_time
     print(f"Total time to aggregate and sort: {total_time} seconds.")
 
@@ -108,7 +134,8 @@ def neural_search(
             video_metadata.*, 
             temp_similar_chunks.median_similarity, 
             temp_similar_chunks.n_similar_chunks, 
-            temp_similar_chunks.weighted_median_similarity
+            temp_similar_chunks.weighted_median_similarity,
+            temp_similar_chunks.weighted_z_score
         FROM video_metadata
         JOIN temp_similar_chunks
         ON video_metadata.url = temp_similar_chunks.url
@@ -120,11 +147,14 @@ def neural_search(
     # Create a DataFrame containing the segment chunks I want to showcase
     segment_chunks_to_showcase_df = (
         (
-            similar_chunks_df[
-                similar_chunks_df["url"].isin(
-                    similar_chunks_video_metadata_df["url"].unique()
-                )
-            ]
+            pg_queries.fetch_text_for_segments(
+                similar_chunks_df[
+                    similar_chunks_df["url"].isin(
+                        similar_chunks_video_metadata_df["url"].unique()
+                    )
+                ],
+                engine,
+            )
             .sort_values("cos_sim", ascending=False)
             .groupby("url")
             .head(n_segment_chunks_to_showcase)
@@ -140,9 +170,9 @@ def neural_search(
     # Merge this DataFrame with the video metadata
     segment_chunks_to_showcase_df = segment_chunks_to_showcase_df.merge(
         similar_chunks_video_metadata_df, on="url"
-    ).sort_values("weighted_median_similarity", ascending=False)
+    ).sort_values("weighted_z_score", ascending=False)
     total_time = time() - start_time
-    print(f"Total time to get video metadata: {total_time} seconds.")
+    print(f"Total time to get video metadata and text: {total_time} seconds.")
 
     # Return the DataFrame as a list of dictionaries
     return segment_chunks_to_showcase_df.to_json(orient="records")

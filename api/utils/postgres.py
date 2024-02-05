@@ -98,7 +98,7 @@ def query_postgres(query, engine, logger=None):
             ):
                 # If it's a command that modifies the database, use the execute method
                 conn.begin()
-                conn.execute(query)
+                conn.execute(text(query))
                 conn.commit()
                 logger.debug(f"Successfully executed command: {query}")
             else:
