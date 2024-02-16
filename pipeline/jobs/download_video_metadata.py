@@ -70,6 +70,9 @@ def run_download_video_metadata_job(
             .iloc[0]
             .scrape_date
         )
+        
+        if n_days_to_not_scrape is None:
+            skip_scraping = False
 
         # If today's date is within the timedelta, skip scraping
         if (pd.Timestamp.now() - most_recent_date) < pd.Timedelta(

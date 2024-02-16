@@ -109,6 +109,11 @@ def run_embed_transcriptions_job(
     transcriptions_to_embed_df = pd.read_gbq(
         transcriptions_to_embed_query, project_id=GBQ_PROJECT_ID
     )
+    
+    # If there aren't any transcriptions to embed, then return
+    if len(transcriptions_to_embed_df) == 0:
+        logger.info(f"No transcriptions to embed. Exiting...")
+        return
 
     logger.info(
         f"Found {len(transcriptions_to_embed_df):,} individual transcription segments to embed."
