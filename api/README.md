@@ -18,3 +18,15 @@ poetry install --no-root
 ```
 uvicorn api:app --reload --host 0.0.0.0 --port 8000
 ```
+
+## Docker Image
+
+BUILDING: 
+```
+docker build -t neural-needledrop-api .
+```
+
+RUNNING: 
+```
+docker run -it -e PYTHONBUFFERED=1 -e POSTGRES_HOST=neural-needledrop-database -e LOG_TO_CONSOLE=True -e TQDM_ENABLED=True -e OPENAI_API_KEY=$OPENAI_API_KEY -p 8000:8000 neural-needledrop-api
+```

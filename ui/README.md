@@ -8,3 +8,15 @@ As the name would suggest, this folder contains UI code! 🖥️ The UI is a Rea
 npm install
 npm run dev
 ```
+
+### DOCKER
+
+BUILD
+```
+docker build -t neural-needledrop-ui .
+```
+
+RUN
+```
+docker run -p 8080:8080 neural-needledrop-ui
+```

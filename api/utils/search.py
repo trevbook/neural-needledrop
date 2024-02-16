@@ -31,6 +31,12 @@ from utils.postgres_queries import (
     get_most_similar_transcriptions_filtered,
 )
 
+# Set up the logger
+from utils.logging import get_logger
+from utils.settings import LOG_TO_CONSOLE
+
+logger = get_logger(name="api.search", log_to_console=LOG_TO_CONSOLE)
+
 # Create the connection string to the database
 postgres_connection_string = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
@@ -60,6 +66,17 @@ def neural_search(
     This method will run some neural search on the database. It will return a list of videos that are most similar to the query,
     with some of the most similar text chunks from those videos.
     """
+
+    # Log some information about the query. Build the log string before logging it.
+    # Include the query, release date filter, video type filter, and review score filter only if they are not None.
+    log_string = f"Running neural search with the following parameters: Query - {query}"
+    if release_date_filter is not None:
+        log_string += f", Release Date Filter - {release_date_filter}"
+    if video_type_filter is not None:
+        log_string += f", Video Type Filter - {video_type_filter}"
+    if review_score_filter is not None:
+        log_string += f", Review Score Filter - {review_score_filter}"
+    logger.info(log_string)
 
     # First, we're going to set the probes
     postgres.query_postgres(f"SET ivfflat.probes = {ivfflat_probes}", engine=engine)
@@ -207,6 +224,19 @@ def keyword_search(
     """
     This method will run a keyword search on the database.
     """
+
+    # Log some information about the query. Build the log string before logging it.
+    # Include the query, release date filter, video type filter, and review score filter only if they are not None.
+    log_string = (
+        f"Running keyword search with the following parameters: Query - {query}"
+    )
+    if release_date_filter is not None:
+        log_string += f", Release Date Filter - {release_date_filter}"
+    if video_type_filter is not None:
+        log_string += f", Video Type Filter - {video_type_filter}"
+    if review_score_filter is not None:
+        log_string += f", Review Score Filter - {review_score_filter}"
+    logger.info(log_string)
 
     # Get the most similar transcriptions to the query
     most_similar_transcriptions_df = get_most_similar_transcriptions_filtered(
@@ -365,8 +395,12 @@ def keyword_search(
 
 
 def rerank_segment_chunks_for_urls(
-    query: str, urls: list, search_method: str = "hybrid", n_top_segment_chunks: int = 3,
-    neural_weight: float = 0.6, keyword_weight: float = 1
+    query: str,
+    urls: list,
+    search_method: str = "hybrid",
+    n_top_segment_chunks: int = 3,
+    neural_weight: float = 0.6,
+    keyword_weight: float = 1,
 ):
     """
     This method will "rerank" the segment chunks for a given list of URLs. This will consider
@@ -456,6 +490,21 @@ def hybrid_search(
     This method combines both the `keyword_search` and `neural_search` methods to create a hybrid search.
     The results from each search are merged via Reciprocal Rank Fusion (RRF).
     """
+
+    # Log some information about the query. Build the log string before logging it.
+    # Include the query, release date filter, video type filter, and review score filter only if they are not None.
+    # Also include the keyword weight and neural weight.
+    log_string = f"Running hybrid search with the following parameters: Query - {query}"
+    log_string += (
+        f", Keyword Weight - {keyword_weight}, Neural Weight - {neural_weight}"
+    )
+    if release_date_filter is not None:
+        log_string += f", Release Date Filter - {release_date_filter}"
+    if video_type_filter is not None:
+        log_string += f", Video Type Filter - {video_type_filter}"
+    if review_score_filter is not None:
+        log_string += f", Review Score Filter - {review_score_filter}"
+    logger.info(log_string)
 
     # Run the neural search and keyword search in parallel
     with ThreadPoolExecutor(max_workers=2) as executor:

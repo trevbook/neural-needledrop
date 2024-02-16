@@ -14,6 +14,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Imports for Mantine
 import "@mantine/core/styles.css";
+import '@mantine/dates/styles.css';
+
 import { MantineProvider } from "@mantine/core";
 
 // Importing different pages

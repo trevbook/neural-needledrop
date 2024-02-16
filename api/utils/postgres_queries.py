@@ -16,7 +16,6 @@ from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from tqdm import tqdm
 from pathlib import Path
-from google.cloud import storage
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 import random
@@ -24,14 +23,13 @@ import string
 import nltk
 from nltk.corpus import stopwords
 from nltk.util import ngrams
+from datetime import datetime
 
 # Ensure you have the stopwords dataset downloaded
 nltk.download("stopwords", quiet=True)
 
 # Extract the stopwords
-additional_stop_words = [
-    "like"
-]
+additional_stop_words = ["like"]
 stop_words = set(stopwords.words("english")) | set(additional_stop_words)
 
 # Importing custom modules
@@ -63,9 +61,7 @@ def generate_tsquery(input_query, max_n=3):
     words = input_query.split()
 
     # Filter out stopwords
-    filtered_words = [
-        word for word in words if word.lower() not in stop_words
-    ]
+    filtered_words = [word for word in words if word.lower() not in stop_words]
 
     # Generate n-grams for each n from 1 to max_n
     phrases = []
@@ -440,6 +436,17 @@ def create_filters(
     filters = []
 
     if release_date_filter is not None:
+
+        release_date_filter = [
+            (
+                datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%fZ")
+                if date is not None
+                else None
+            )
+            for date in release_date_filter
+        ]
+        print(f"release_date_filter: {release_date_filter}")
+
         if release_date_filter[0] is None and release_date_filter[1] is not None:
             release_date_query = f"publish_date <= '{release_date_filter[1]}'"
         elif release_date_filter[0] is not None and release_date_filter[1] is not None:
@@ -448,7 +455,7 @@ def create_filters(
             release_date_query = f"publish_date >= '{release_date_filter[0]}'"
         filters.append(release_date_query)
 
-    if video_type_filter is not None:
+    if video_type_filter is not None and len(video_type_filter) > 0:
         video_type_filter_string = (
             "(" + " OR ".join([f"video_type = '{x}'" for x in video_type_filter]) + ")"
         )
@@ -603,7 +610,7 @@ def get_most_similar_transcriptions_filtered(
     transcriptions to a given text, with optional filters
     applied to the results.
     """
-    
+
     # Convert the query into a tsquery
     tsquery = generate_tsquery(query)
 
@@ -626,8 +633,10 @@ def get_most_similar_transcriptions_filtered(
     WHERE
     ts_vec @@ to_tsquery('english', '{tsquery}')
     """
-    
-    print(f"The most_similar_transcription_segments_query is:\n\n{most_similar_transcription_segments_query}")
+
+    print(
+        f"The most_similar_transcription_segments_query is:\n\n{most_similar_transcription_segments_query}"
+    )
 
     # Create the filters
     filters = create_filters(
@@ -750,8 +759,7 @@ def get_most_similar_transcriptions_by_url(query, urls, engine, n_per_url=5):
 
 
 def get_most_similar_transcriptions_by_url_hybrid(
-    text, urls, engine, n_per_url=5, k=60,
-    neural_weight=0.8, keyword_weight=1
+    text, urls, engine, n_per_url=5, k=60, neural_weight=0.8, keyword_weight=1
 ):
     """
     This method will determine the most similar transcriptions to the input `text` for the given `urls`.

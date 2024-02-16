@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Center, TextInput, Button } from "@mantine/core";
+import { Center, TextInput, Button, Text } from "@mantine/core";
 import appLogo from "../assets/app-logo.png"; // Make sure the path is correct
 import { Search } from "tabler-icons-react";
 import { useNavigate } from "react-router-dom";
@@ -73,7 +73,13 @@ function SearchPage() {
         marginTop: "15vh",
       }}
     >
-      <Center style={{ flexDirection: "column", width: "80%", justifyContent: "flex-start" }}>
+      <Center
+        style={{
+          flexDirection: "column",
+          width: "90%",
+          justifyContent: "flex-start",
+        }}
+      >
         <img
           src={appLogo}
           alt="Neural Needledrop Logo"
@@ -97,7 +103,7 @@ function SearchPage() {
         <Accordion className="accordionStyle">
           <Accordion.Item key={1} value={"Advanced Search Options"}>
             <Accordion.Control icon={"🔎"}>
-              {"Advanced Search Options"}
+              <Text style={{ fontSize: "1.2rem" }}>Advanced Search Options</Text>
             </Accordion.Control>
             <Accordion.Panel>
               <AdvancedSearchOptions />

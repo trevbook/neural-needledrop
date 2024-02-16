@@ -1,0 +1,31 @@
+services:
+  neural-needledrop-database:
+    image: ankane/pgvector:v0.5.1
+    environment:
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_DB: neural_needledrop_data
+      POSTGRES_USER: my_user
+    ports:
+      - 5432:5432
+    volumes:
+      - ./database/data:/var/lib/postgresql/data
+
+  neural-needledrop-api:
+    build: ./api
+    environment:
+      - POSTGRES_HOST=neural-needledrop-database
+      - PYTHONBUFFERED=1
+      - LOG_TO_CONSOLE=True
+      - TQDM_ENABLED=True
+      - OPENAI_API_KEY=$OPENAI_API_KEY
+    ports:
+      - 8000:8000
+    depends_on:
+      - neural-needledrop-database
+  
+  neural-needledrop-ui:
+    build: ./ui
+    ports:
+      - 8080:8080
+    depends_on:
+      - neural-needledrop-api

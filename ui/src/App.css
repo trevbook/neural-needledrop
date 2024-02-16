@@ -46,6 +46,32 @@
   }
 }
 
+.search-type-control .mantine-Slider-label {
+  display: none;
+}
+
+.search-type-control .mantine-Slider-bar {
+  background-color: #ced4da;
+}
+
+.search-type-control .mantine-Slider-track {
+  --slider-track-bg: #ced4da;
+}
+
+.search-type-control .mantine-Slider-mark {
+  --_mark-bd: black;
+}
+
+.search-option-row {
+  margin-bottom: 25px;
+}
+
+.control-row-title {
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+
 /* 
     ===========
     ResultsPage

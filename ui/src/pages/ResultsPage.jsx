@@ -15,6 +15,7 @@ import { useLocation } from "react-router-dom";
 import { Loader } from "@mantine/core";
 import { performSearch } from "../api";
 import SearchResult from "../components/SearchResult";
+import { useSearchSettingsStore } from "../stores";
 
 /**
  * ========
@@ -34,6 +35,23 @@ function ResultsPage() {
   const urlSearchParams = new URLSearchParams(location.search);
   const query_params = Object.fromEntries(urlSearchParams);
 
+  // Grab various parameters from the search settings store
+  const neuralStrength = useSearchSettingsStore(
+    (state) => state.neuralStrength
+  );
+  const keywordStrength = useSearchSettingsStore(
+    (state) => state.keywordStrength
+  );
+  const reviewScoreRange = useSearchSettingsStore(
+    (state) => state.reviewScoreRange
+  );
+  const videoTypeFilter = useSearchSettingsStore(
+    (state) => state.videoTypeFilter
+  );
+  const releaseDateFilter = useSearchSettingsStore(
+    (state) => state.releaseDateFilter
+  );
+
   // This effect will fetch the search results when the query_params contain a query
   useEffect(() => {
     const fetchData = async () => {
@@ -47,15 +65,18 @@ function ResultsPage() {
         return;
       }
 
-      console.log(`the useEffect is running with query: ${query_params.query}`);
-
       setQueryInProgress(true);
 
       // Try and run the search
       try {
-
-        console.log("RUNNING SEARCH")
-        const data = await performSearch(query_params.query);
+        const data = await performSearch(
+          query_params.query,
+          neuralStrength,
+          keywordStrength,
+          reviewScoreRange,
+          videoTypeFilter,
+          releaseDateFilter
+        );
 
         // Check if data is a string and try to parse it
         let parsedData;
@@ -67,9 +88,6 @@ function ResultsPage() {
 
         setResults(parsedData);
         setLoading(false);
-
-        // Log the type of the data to the console
-        console.log("Data type:", typeof parsedData);
       } catch (error) {
         // If we run into an error, log it and stop loading
         console.error("Error during search:", error);
