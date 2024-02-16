@@ -47,7 +47,7 @@ class SearchRequest(BaseModel):
 
 # The cache key will be the 'query' from the function arguments
 def cache_key(*args, **kwargs):
-    return kwargs['search_request'].query
+    return kwargs["search_request"].query
 
 
 @app.post("/search")
@@ -64,4 +64,30 @@ def search(search_request: SearchRequest):
     if search_request.search_type == "neural":
         return search_utils.neural_search(
             query=search_request.query,
+        )
+
+    # If the user wants keyword search, then we'll run this.
+    if search_request.search_type == "keyword":
+        return search_utils.keyword_search(
+            query=search_request.query,
+        )
+
+    # If the user wants hybrid search, then we'll run this.
+    if search_request.search_type == "hybrid":
+
+        # Determine how many individual words are in the query
+        num_words = len(search_request.query.split())
+
+        # If there are less than 3 words, we'll weigh the keyword search more heavily
+        if num_words < 3:
+            keyword_weight = 1
+        else:
+            keyword_weight = 0.8
+
+        return search_utils.hybrid_search(
+            query=search_request.query,
+            max_video_per_search_method=5,
+            max_results=10,
+            keyword_weight=keyword_weight,
+            neural_weight=1,
         )

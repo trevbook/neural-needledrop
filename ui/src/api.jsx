@@ -22,8 +22,9 @@ export const performSearch = async (searchQuery) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/search`, {
       query: searchQuery,
-      search_type: "neural",
+      search_type: "hybrid",
     });
+    console.log("Response from search:", response.data)
     return response.data;
   } catch (error) {
     throw error;

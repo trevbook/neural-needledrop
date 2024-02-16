@@ -93,8 +93,8 @@ def query_postgres(query, engine, logger=None):
     # Execute the query
     with engine.connect() as conn:
         try:
-            if query.upper().startswith(
-                ("SET", "CREATE", "DROP", "INSERT", "UPDATE", "DELETE")
+            if query.strip().upper().startswith(
+                ("SET", "CREATE", "DROP", "INSERT", "UPDATE", "DELETE", "ALTER")
             ):
                 # If it's a command that modifies the database, use the execute method
                 conn.begin()

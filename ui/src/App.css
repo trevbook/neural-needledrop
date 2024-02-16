@@ -5,14 +5,22 @@
 */
 
 .formStyle {
-  width: 65%;
+  width: 85%;
   display: flex;
   justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.accordionStyle {
+  width: 85%;
 }
 
 /* Media query for mobile devices */
 @media (max-width: 768px) {
   .formStyle {
+    width: 95%;
+  }
+  .accordionStyle {
     width: 95%;
   }
 }
