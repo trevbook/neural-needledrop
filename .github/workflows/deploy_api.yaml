@@ -1,5 +1,5 @@
 # This file contains the workflow that'll build and deploy the Neural Needledrop api.
-name: Neural Needledrop Api
+name: Neural Needledrop API
 
 # This Workflow will only run on changes to the api code.
 on:
@@ -51,4 +51,19 @@ jobs:
           # Create a temporary file to store the GCP JSON key
           echo "$GCP_KEY" > gcp_key.json
 
-          # DO THE REST OF THE API DEPLOYMENT
+          # Create another temporary file to store the OpenAI API key
+          echo "$OPENAI_API_KEY" > openai_api_key.txt
+
+          # Copy the deployment script to the server, along with the GCP key and OpenAI API key
+          scp -i ~/.ssh/id_rsa ./api/deployment/deploy_api.sh trevormhubbard@$IP_ADDRESS:/tmp/deploy_api.sh
+          scp -i ~/.ssh/id_rsa ./gcp_key.json trevormhubbard@$IP_ADDRESS:/tmp/gcp_key.json
+          scp -i ~/.ssh/id_rsa ./openai_api_key.txt trevormhubbard@$IP_ADDRESS:/tmp/openai_api_key.txt
+
+          # Deleting the temporary GCP JSON key file
+          rm gcp_key.json
+
+          # Deleting the temporary OpenAI API key file
+          rm openai_api_key.txt
+
+          # Running the deployment script on the server
+          ssh -i ~/.ssh/id_rsa trevormhubbard@$IP_ADDRESS 'chmod +x /tmp/deploy_pipeline.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_api.sh'

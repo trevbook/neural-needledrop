@@ -1,5 +1,5 @@
 # This file contains the workflow that'll build and deploy the Neural Needledrop ui.
-name: Neural Needledrop Ui
+name: Neural Needledrop UI
 
 # This Workflow will only run on changes to the ui code.
 on:
@@ -46,7 +46,11 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H $IP_ADDRESS >> ~/.ssh/known_hosts
 
-          # Create a temporary file to store the GCP JSON key
-          echo "$GCP_KEY" > gcp_key.json
+          # Copy the deployment script to the server, along with the GCP key
+          scp -i ~/.ssh/id_rsa ./ui/deployment/deploy_ui.sh trevormhubbard@$IP_ADDRESS:/tmp/deploy_ui.sh
 
-          # DO THE REST OF THE UI DEPLOYMENT
+          # Deleting the temporary GCP JSON key file
+          rm gcp_key.json
+
+          # Running the deployment script on the server
+          ssh -i ~/.ssh/id_rsa trevormhubbard@$IP_ADDRESS 'chmod +x /tmp/deploy_ui.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_ui.sh'
