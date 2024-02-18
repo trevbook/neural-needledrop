@@ -32,10 +32,6 @@ COPY --from=builder /usr/local /usr/local
 # Copy the rest of the files to the working directory
 COPY --from=builder /usr/src/app /usr/src/app
 
-# Set up Google Cloud authentication
-COPY gcloud-service-key.json* /app/
-ENV GOOGLE_APPLICATION_CREDENTIALS=/app/gcloud-service-key.json
-
 # Set the OpenAI API key securely
 ARG OPENAI_API_KEY
 ENV OPENAI_API_KEY=$OPENAI_API_KEY

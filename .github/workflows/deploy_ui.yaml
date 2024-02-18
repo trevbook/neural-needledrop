@@ -49,8 +49,5 @@ jobs:
           # Copy the deployment script to the server, along with the GCP key
           scp -i ~/.ssh/id_rsa ./ui/deployment/deploy_ui.sh trevormhubbard@$IP_ADDRESS:/tmp/deploy_ui.sh
 
-          # Deleting the temporary GCP JSON key file
-          rm gcp_key.json
-
           # Running the deployment script on the server
           ssh -i ~/.ssh/id_rsa trevormhubbard@$IP_ADDRESS 'chmod +x /tmp/deploy_ui.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_ui.sh'
