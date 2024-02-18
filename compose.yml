@@ -20,12 +20,8 @@ services:
       - OPENAI_API_KEY=$OPENAI_API_KEY
     ports:
       - 8000:8000
-    depends_on:
-      - neural-needledrop-database
-  
+
   neural-needledrop-ui:
     build: ./ui
     ports:
       - 8080:8080
-    depends_on:
-      - neural-needledrop-api
