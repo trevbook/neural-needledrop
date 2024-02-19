@@ -27,6 +27,7 @@ sudo docker run --name neural-needledrop-database-container \
     -e POSTGRES_USER=my_user \
     -p 5432:5432 \
     -v /database/data:/var/lib/postgresql/data \
+    --network bridge \
     -d ankane/pgvector:v0.5.1
 
 # Pull the most recent database-update image

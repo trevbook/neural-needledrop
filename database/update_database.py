@@ -40,6 +40,9 @@ logger = get_logger("postgres_database", log_to_console=LOG_TO_CONSOLE)
 
 # Create the connection string to the database
 postgres_connection_string = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+logger.info(
+    f"Connecting to the database using the following connection string: {postgres_connection_string}"
+)
 
 # Create the connection engine
 engine = create_engine(postgres_connection_string)
