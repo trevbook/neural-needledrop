@@ -17,4 +17,4 @@ sudo docker rm neural-needledrop-api-container || true
 
 # Run the API container
 echo "Running the API container..."
-sudo docker run -e POSTGRES_HOST=neural-needledrop-database -e OPENAI_API_KEY=$OPENAI_API_KEY -p 8000:8000 --name neural-needledrop-api-container -d us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-api:latest
+sudo docker run --network=bridge --add-host=host.docker.internal:host-gateway -e POSTGRES_HOST=host.docker.internal -e OPENAI_API_KEY=$OPENAI_API_KEY -p 8000:8000 --name neural-needledrop-api-container -d us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-api:latest
