@@ -48,7 +48,7 @@ from utils.logging import get_logger
 from utils.postgres import query_postgres, upload_to_table
 
 # Set up a logger for this notebook
-logger = get_logger("postgres_notebook", log_to_console=LOG_TO_CONSOLE)
+logger = get_logger("api.postgres_queries", log_to_console=LOG_TO_CONSOLE)
 
 # =======
 # METHODS

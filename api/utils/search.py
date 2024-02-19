@@ -538,11 +538,13 @@ def hybrid_search(
         drop=True
     )
 
-    print(
-        f"Retrieved {len(neural_results_df)} neural results and {len(keyword_results_df)} keyword results."
+    # Log some info about the number of results returned
+    logger.info(
+        f"Neural search returned {len(neural_results_df)} results, keyword search returned {len(keyword_results_df)} results."
     )
 
     if len(keyword_results_df) == 0:
+        logger.info(f"No keyword results returned. Returning neural results only.")
         return neural_results_json_str
 
     # Create a DataFrame with the metadata of the resulting videos' metadata
