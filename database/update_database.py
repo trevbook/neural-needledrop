@@ -89,7 +89,12 @@ def update_database(
     if recreate_tables:
         # Log that we're deleting the tables
         logger.info("DELETING EACH OF THE POSTGRES TABLES...")
-        tables_to_delete = ["video_metadata", "embeddings", "transcriptions"]
+        tables_to_delete = [
+            "video_metadata",
+            "embeddings",
+            "transcriptions",
+            "embeddings_to_text",
+        ]
         for table in tables_to_delete:
             delete_table(table, engine, logger)
 
@@ -159,13 +164,13 @@ def update_database(
 
         # Log the error
         logger.error(f"An error occurred while creating the transcriptions table: {e}")
-    
+
     # Try and add the ts_vec column if it doesn't exist
-    try: 
-        
+    try:
+
         # Log that we're adding the ts_vec column
         logger.info("Trying to add the ts_vec column to the transcriptions table...")
-        
+
         # Declare a query that'll identify whether the ts_vec column exists
         tsvector_column_exists_query = """
         SELECT
@@ -177,16 +182,18 @@ def update_database(
         AND
         column_name = 'ts_vec';
         """
-        
+
         # Execute the query
-        tsvector_column_exists = query_postgres(tsvector_column_exists_query, engine).shape[0] > 0
-        
+        tsvector_column_exists = (
+            query_postgres(tsvector_column_exists_query, engine).shape[0] > 0
+        )
+
         # We're only going to run this notebook if the ts_vec column doesn't exist
         if not tsvector_column_exists:
-            
+
             # Log that we're adding the ts_vec column
             logger.info("ADDING THE ts_vec COLUMN TO THE transcriptions TABLE...")
-            
+
             # Define a query that'll add a tsvector column to the transcriptions table
             add_tsvector_column_query = """
             ALTER TABLE transcriptions
@@ -198,15 +205,16 @@ def update_database(
 
             # Execute the query
             query_postgres(add_tsvector_column_query, engine)
-        
+
     except Exception as e:
-            
-            # Log the error
-            logger.error(f"An error occurred while adding the ts_vec column to the transcriptions table: {e}")
-            
-            # Log the traceback
-            logger.error(traceback.format_exc())
-    
+
+        # Log the error
+        logger.error(
+            f"An error occurred while adding the ts_vec column to the transcriptions table: {e}"
+        )
+
+        # Log the traceback
+        logger.error(traceback.format_exc())
 
     # =========================
     # EMBEDDINGS INITIALIZATION
@@ -383,10 +391,10 @@ def update_database(
     FROM
     `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.embeddings` embedding
     WHERE
-    embedding.id NOT IN (SELECT id FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.cur_pg_db_embeddings`)
     AND embedding.video_url IN (
         SELECT DISTINCT(video_url) 
         FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.embeddings` 
+        WHERE video_url NOT IN (SELECT id FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.cur_pg_db_video_metadata`)
         LIMIT {max_n_videos_to_update_embeddings}
     )
     GROUP BY
@@ -639,6 +647,71 @@ def update_database(
         except Exception as e:
             # Log the error if the index already exists
             logger.error(f"An error occurred while creating the embeddings index: {e}")
+
+    # ===========================
+    # CREATING EMBEDDINGS TO TEXT
+    # ===========================
+    # Below, I'm going to create a table that maps embeddings to text
+
+    # First, delete the table if it already exists
+    delete_table("embeddings_to_text", engine, logger)
+
+    table_creation_query = f"""
+    CREATE TABLE embeddings_to_text AS (
+        WITH 
+        embedding_to_text_flattened AS (
+            SELECT
+            embeddings.id,
+            embeddings.url,
+            embeddings.start_segment,
+            embeddings.end_segment,
+            transcriptions.text,
+            transcriptions.segment_id,
+            transcriptions.segment_start,
+            transcriptions.segment_end
+            FROM
+            embeddings
+            LEFT JOIN
+            transcriptions
+            ON
+            transcriptions.segment_id >= embeddings.start_segment
+            AND
+            transcriptions.segment_id < embeddings.end_segment
+            AND
+            transcriptions.url = embeddings.url
+            ORDER BY
+            url DESC,
+            segment_id ASC
+        ),
+        
+        embedding_to_text AS (
+            SELECT
+                id,
+                url,
+                start_segment,
+                end_segment,
+                ARRAY_TO_STRING(ARRAY_AGG(emb.text ORDER BY emb.segment_id), '') AS text,
+                MIN(emb.segment_start) AS segment_start,
+                MAX(emb.segment_end) AS segment_end
+            FROM
+                embedding_to_text_flattened emb
+            GROUP BY
+                id,
+                url,
+                start_segment,
+                end_segment
+        )
+
+        SELECT * FROM embedding_to_text
+    )
+    """
+
+    # Execute the above query
+    query_postgres(
+        table_creation_query,
+        engine=engine,
+        logger=logger,
+    )
 
 
 # ====================
