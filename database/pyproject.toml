@@ -16,6 +16,7 @@ pandas-gbq = "^0.20.0"
 google-cloud-logging = "^3.9.0"
 google-cloud-storage = "^2.14.0"
 pgvector = "^0.2.4"
+tqdm = "^4.66.2"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"

@@ -1,5 +1,5 @@
 # This file contains the workflow that'll build and deploy the Neural Needledrop data pipeline.
-name: Neural Needledrop Pipeline Deployment
+name: Neural Needledrop Data Pipeline
 
 # This Workflow will only run on changes to the Pipeline code.
 on:

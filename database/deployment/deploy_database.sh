@@ -29,6 +29,15 @@ sudo docker run --name neural-needledrop-database-container \
     -v /database/data:/var/lib/postgresql/data \
     -d ankane/pgvector:v0.5.1
 
+# Pull the most recent database-update image
+echo "Pulling the latest Docker image for updating the database..."
+sudo docker pull us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-database-update:latest
+
+# Stop and remove the current running container
+echo "Stopping and removing current container for updating the database..."
+sudo docker stop neural-needledrop-database-update-container || true
+sudo docker rm neural-needledrop-database-update-container || true
+
 # Copy the database_cron file to /etc/cron.d/
 echo "Copying database_cron to /etc/cron.d/"
 sudo cp /tmp/database_cron /etc/cron.d/database_cron
