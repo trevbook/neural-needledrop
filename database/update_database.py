@@ -37,7 +37,7 @@ from utils.gcs import download_file_from_bucket
 from utils.postgres import query_postgres, upload_to_table, delete_table
 
 # Set up a logger for this notebook
-logger = get_logger("postgres_database", log_to_console=LOG_TO_CONSOLE)
+logger = get_logger("database_update", log_to_console=LOG_TO_CONSOLE)
 
 # Create the connection string to the database
 postgres_connection_string = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
@@ -276,7 +276,7 @@ def update_database(
 
     # Determine the embeddings currently in the `embeddings` table
     cur_database_embeddings_df = query_postgres(
-        "SELECT DISTINCT(id) FROM embeddings",
+        "SELECT id, url FROM embeddings GROUP BY id, url",
         engine=engine,
         logger=logger,
     )
@@ -394,7 +394,7 @@ def update_database(
     embedding.video_url IN (
         SELECT DISTINCT(video_url) 
         FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.embeddings` 
-        WHERE video_url NOT IN (SELECT id FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.cur_pg_db_video_metadata`)
+        WHERE video_url NOT IN (SELECT url FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.cur_pg_db_embeddings`)
         LIMIT {max_n_videos_to_update_embeddings}
     )
     GROUP BY
