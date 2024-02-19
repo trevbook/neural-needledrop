@@ -371,7 +371,8 @@ def keyword_search(
     # Fix this DataFrame's columns
     aggregated_transcription_stats_with_metadata_and_text_df = (
         aggregated_transcription_stats_with_metadata_and_text_df.drop(
-            columns=["median_rank", "mean_rank", "count_z_score"]
+            columns=["median_rank", "mean_rank", "count_z_score"],
+            errors="ignore",
         ).rename(
             columns={
                 "n_results": "n_segment_matches",
@@ -554,7 +555,8 @@ def hybrid_search(
                         "n_segment_matches",
                         "neural_search_score",
                         "neural_search_score_z_score",
-                    ]
+                    ],
+                    errors="ignore",
                 ).copy(),
                 keyword_results_df.drop(
                     columns=[
@@ -562,7 +564,8 @@ def hybrid_search(
                         "n_segment_matches",
                         "keyword_search_score",
                         "keyword_search_score_z_score",
-                    ]
+                    ],
+                    errors="ignore",
                 ).copy(),
             ]
         )
