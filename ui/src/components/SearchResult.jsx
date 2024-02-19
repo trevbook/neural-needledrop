@@ -63,11 +63,15 @@ function SearchResult({ result }) {
           <Text>Review Score: {review_score}</Text>
           <Text>Publish Date: {formattedPublishDate}</Text>
           <Text>Top segments:</Text>
-          <ul>
-            {top_segment_chunks.map((segment, index) => (
-              <li key={index}>{segment}</li>
-            ))}
-          </ul>
+          {top_segment_chunks ? (
+            <ul>
+              {top_segment_chunks.map((segment, index) => (
+                <li key={index}>{segment}</li>
+              ))}
+            </ul>
+          ) : (
+            <Text>Error: Could not retrieve top segment chunks</Text>
+          )}
         </div>
       </div>
     </Paper>
