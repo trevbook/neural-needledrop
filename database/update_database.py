@@ -63,7 +63,8 @@ def update_database(
     postgres_upload_chunksize=5000,
     postgres_maintenance_work_mem="2GB",
     postgres_max_parallel_maintenance_workers=1,
-    max_n_videos_to_update_embeddings=20,
+    max_n_videos_to_update_embeddings=100,
+    n_max_embeddings_per_upload=500,
     recreate_embeddings_index_if_exists=True,
     embeddings_index_ivfflat_nlist=500,
 ):
@@ -76,7 +77,8 @@ def update_database(
     postgres_upload_chunksize (int): The chunksize for the Postgres upload. Default is 5000.
     postgres_maintenance_work_mem (str): The memory allocated for maintenance operations. Default is "6GB".
     postgres_max_parallel_maintenance_workers (int): The maximum number of workers that can be used for maintenance operations. Default is 7.
-    max_n_videos_to_update_embeddings (int): The maximum number of videos to update the embeddings for. Default is 1000.
+    max_n_videos_to_update_embeddings (int): The maximum number of videos to update the embeddings for. Default is 100.
+    n_max_embeddings_per_upload (int): The maximum number of embeddings to upload at once. Default is 500.
     recreate_embeddings_index_if_exists (bool): Whether to recreate the embeddings index if it already exists. Default is True.
     embeddings_index_ivfflat_nlist (int): The number of Voronoi cells (i.e., clusters) for the IVFFLAT index. Default is 500.
     """
@@ -495,50 +497,77 @@ def update_database(
     # ===========================
     # Below, I'm going to load the embeddings into RAM, so that I can then upload them to the Postgres database
 
+    def load_embeddings_into_postgres(emb_file_paths):
+        """
+        This is a helper function that'll load a set of embeddings
+        into RAM, and then into the Postgres database. By splitting this
+        process into its own function, I can ensure that there isn't a
+        huge memory spike when loading in the embeddings.
+        """
+
+        # We'll store the embeddings in a dictionary, where the key is the
+        # embedding ID and the value is the ndarray of the embedding
+        embeddings = {}
+        for emb_file in emb_file_paths:
+            try:
+                # Load in the .npy file as a numpy array
+                embedding = np.load(emb_file)
+
+                # If the embedding is empty, skip it
+                if embedding.shape == ():
+                    continue
+
+                # Get the embedding ID
+                embedding_id = emb_file.stem
+
+                # Add the embedding to the dictionary, storing the list representation
+                embeddings[embedding_id] = embedding.tolist()
+
+            except Exception as e:
+                logger.error(f"Error loading embedding: {e}")
+                pass
+
+        # Delete all of the files in the temp directory
+        for emb_file in emb_file_paths:
+            emb_file.unlink()
+
+        # Make a "loaded_embeddings_df" that has the embeddings loaded in
+        loaded_embeddings_df = embeddings_df.copy()
+        loaded_embeddings_df["embedding"] = loaded_embeddings_df["id"].apply(
+            lambda x: embeddings.get(x, None)
+        )
+
+        # Drop any rows where the embedding is None
+        loaded_embeddings_df = loaded_embeddings_df.dropna(
+            subset=["embedding"]
+        ).drop_duplicates(subset=["id"])
+
+        # Determine which rows of the embeddings_df we need to add to the database
+        embeddings_df_to_add = loaded_embeddings_df[
+            ~loaded_embeddings_df["id"].isin(cur_database_embeddings_df["id"])
+        ].copy()
+
+        # Upload the embeddings to the database
+        upload_to_table(
+            embeddings_df_to_add.drop(columns=["gcs_uri"]),
+            "embeddings",
+            engine=engine,
+            logger=logger,
+            chunksize=postgres_upload_chunksize,
+        )
+
     # Log that we're loading the embeddings into the Postgres database
-    logger.info("LOADING EMBEDDINGS INTO RAM...")
+    logger.info("LOADING EMBEDDINGS INTO POSTGRES...")
 
-    # We're going to store the embeddings in a dictionary, where the key is the
-    # embedding ID and the value is the ndarray of the embedding
-    embeddings = {}
-    for idx, emb_file in tqdm(list(enumerate(list(temp_emb_directory_path.iterdir())))):
-        try:
-            # Load in the .npy file as a numpy array
-            embedding = np.load(emb_file)
-
-            # If the embedding is empty, skip it
-            # TODO: This is because it seems like a ton of embeddings are
-            # empty. We should figure out why that is.
-            if embedding.shape == ():
-                continue
-
-            # Get the embedding ID
-            embedding_id = emb_file.stem
-
-            # Add the embedding to the dictionary, storing the list representation
-            embeddings[embedding_id] = embedding.tolist()
-
-        except Exception as e:
-            print(f"Error loading embedding: {e}")
-            pass
-
-    # Delete all of the files in the temp directory
-    for file in temp_emb_directory_path.glob("*"):
-        file.unlink()
+    # Break up the embeddings into chunks
+    all_emb_file_names = list(enumerate(list(temp_emb_directory_path.iterdir())))
+    for i in range(0, len(all_emb_file_names), n_max_embeddings_per_upload):
+        chunk = all_emb_file_names[i : i + n_max_embeddings_per_upload]
+        logger.debug(f"Loading embeddings chunk {i} into Postgres...")
+        load_embeddings_into_postgres(chunk)
 
     # Delete the temp directory
     temp_emb_directory_path.rmdir()
-
-    # Make a "loaded_embeddings_df" that has the embeddings loaded in
-    loaded_embeddings_df = embeddings_df.copy()
-    loaded_embeddings_df["embedding"] = loaded_embeddings_df["id"].apply(
-        lambda x: embeddings.get(x, None)
-    )
-
-    # Drop any rows where the embedding is None
-    loaded_embeddings_df = loaded_embeddings_df.dropna(
-        subset=["embedding"]
-    ).drop_duplicates(subset=["id"])
 
     # ==============================
     # ADDING ROWS TO POSTGRES TABLES
@@ -558,11 +587,6 @@ def update_database(
         ~transcriptions_df["url"].isin(cur_database_transcriptions_df["url"])
     ].copy()
 
-    # Determine which rows of the embeddings_df we need to add to the database
-    embeddings_df_to_add = loaded_embeddings_df[
-        ~loaded_embeddings_df["id"].isin(cur_database_embeddings_df["id"])
-    ].copy()
-
     # Log some information about the number of rows we're adding
     logger.info(
         f"Adding {len(video_metadata_df_to_add)} rows to the video_metadata table."
@@ -570,7 +594,6 @@ def update_database(
     logger.info(
         f"Adding {len(transcriptions_df_to_add)} rows to the transcriptions table."
     )
-    logger.info(f"Adding {len(embeddings_df_to_add)} rows to the embeddings table.")
 
     # Upload the video metadata to the database
     upload_to_table(
@@ -586,15 +609,6 @@ def update_database(
         "transcriptions",
         engine=engine,
         logger=logger,
-    )
-
-    # Upload the embeddings to the database
-    upload_to_table(
-        embeddings_df_to_add.drop(columns=["gcs_uri"]),
-        "embeddings",
-        engine=engine,
-        logger=logger,
-        chunksize=postgres_upload_chunksize,
     )
 
     # =========================
