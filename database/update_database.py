@@ -391,7 +391,7 @@ def update_database(
     FROM
     `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.embeddings` embedding
     WHERE
-    AND embedding.video_url IN (
+    embedding.video_url IN (
         SELECT DISTINCT(video_url) 
         FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.embeddings` 
         WHERE video_url NOT IN (SELECT id FROM `{GBQ_PROJECT_ID}.{GBQ_DATASET_ID}.cur_pg_db_video_metadata`)
