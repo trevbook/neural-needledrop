@@ -28,3 +28,16 @@ sudo docker run --name neural-needledrop-database-container \
     -p 5432:5432 \
     -v /database/data:/var/lib/postgresql/data \
     -d ankane/pgvector:v0.5.1
+
+# Copy the database_cron file to /etc/cron.d/
+echo "Copying database_cron to /etc/cron.d/"
+sudo cp /tmp/database_cron /etc/cron.d/database_cron
+
+# Set appropriate permissions for the cron file
+echo "Setting permissions for the cron file"
+sudo chmod 644 /etc/cron.d/database_cron
+sudo chown root:root /etc/cron.d/database_cron
+
+# Restart cron to apply changes
+echo "Restarting cron service to apply changes"
+sudo systemctl restart cron

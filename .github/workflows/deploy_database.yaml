@@ -24,6 +24,14 @@ jobs:
           registry: us-central1-docker.pkg.dev
           username: _json_key
           password: ${{ secrets.GCP_KEY }}
+      - name: Build and push database update image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: database
+          tags: us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-database-update:latest
+          provenance: false
+          platforms: linux/amd64
+          push: true
       - name: Install SSH client
         run: sudo apt-get install openssh-client
       - name: SSH and Update Server
