@@ -93,7 +93,6 @@ def upload_file_to_bucket(
 
         # Upload the file using the file path
         blob.upload_from_filename(file_path)
-        logger.debug(f"File {file_name} uploaded to {project_id}.{bucket_name}")
     except Exception as e:
         logger.error(
             f"Error uploading file {file_name} to {project_id}.{bucket_name}: '{e}'"
@@ -160,7 +159,6 @@ def download_file_from_bucket(
         # Download the file using the file path
         blob = bucket.blob(file_name)
         blob.download_to_filename(destination_folder + file_name)
-        logger.debug(f"File {file_name} downloaded from {project_id}.{bucket_name}")
     except Exception as e:
         logger.error(
             f"Error downloading file {file_name} from {project_id}.{bucket_name}: '{e}'"

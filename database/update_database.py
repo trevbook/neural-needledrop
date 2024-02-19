@@ -560,7 +560,7 @@ def update_database(
     logger.info("LOADING EMBEDDINGS INTO POSTGRES...")
 
     # Break up the embeddings into chunks
-    all_emb_file_names = list(enumerate(list(temp_emb_directory_path.iterdir())))
+    all_emb_file_names = list(temp_emb_directory_path.iterdir())
     for i in range(0, len(all_emb_file_names), n_max_embeddings_per_upload):
         chunk = all_emb_file_names[i : i + n_max_embeddings_per_upload]
         logger.debug(f"Loading embeddings chunk {i} into Postgres...")
