@@ -8,20 +8,10 @@ This file contains various utility functions for interacting with the Postgres d
 # The code below will set up the file.
 
 # Import statements
-import psycopg2
 import pandas as pd
 from sqlalchemy.sql import text
 from sqlalchemy import (
-    create_engine,
-    MetaData,
     Table,
-    Column,
-    Integer,
-    String,
-    Date,
-    Float,
-    Boolean,
-    DateTime,
 )
 
 # Importing other custom modules
