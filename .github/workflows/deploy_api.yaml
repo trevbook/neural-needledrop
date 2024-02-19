@@ -66,4 +66,4 @@ jobs:
           rm openai_api_key.txt
 
           # Running the deployment script on the server
-          ssh -i ~/.ssh/id_rsa trevormhubbard@$IP_ADDRESS 'chmod +x /tmp/deploy_pipeline.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_api.sh'
+          ssh -i ~/.ssh/id_rsa trevormhubbard@$IP_ADDRESS 'chmod +x /tmp/deploy_api.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_api.sh'

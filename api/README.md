@@ -30,4 +30,4 @@ RUNNING:
 ```
 docker run -it -e PYTHONBUFFERED=1 -e POSTGRES_HOST=neural-needledrop-database -e LOG_TO_CONSOLE=True -e TQDM_ENABLED=True -e OPENAI_API_KEY=$OPENAI_API_KEY -p 8000:8000 neural-needledrop-api
 ```
-  
+   
