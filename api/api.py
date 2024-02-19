@@ -34,7 +34,13 @@ app = FastAPI()
 # Adding CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "http://localhost:5173", "http://localhost", "http://host.docker.internal"],
+    allow_origins=[
+        "*",
+        "http://localhost:5173",
+        "http://localhost",
+        "http://host.docker.internal",
+        "http://34.173.97.175",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
