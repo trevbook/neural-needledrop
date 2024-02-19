@@ -16,6 +16,8 @@ poetry install --no-root
 ## Running the API Locally
 
 ```
+$env:LOG_TO_CONSOLE="True"
+$env:LOG_LEVEL="DEBUG"
 uvicorn api:app --reload --host 0.0.0.0 --port 8000
 ```
 

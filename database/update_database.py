@@ -63,8 +63,8 @@ def update_database(
     postgres_upload_chunksize=5000,
     postgres_maintenance_work_mem="2GB",
     postgres_max_parallel_maintenance_workers=1,
-    max_n_videos_to_update_embeddings=1000,
-    n_max_embeddings_per_upload=500,
+    max_n_videos_to_update_embeddings=250,
+    n_max_embeddings_per_upload=750,
     recreate_embeddings_index_if_exists=True,
     embeddings_index_ivfflat_nlist=500,
 ):
@@ -573,7 +573,12 @@ def update_database(
         )
 
     # Delete the temp directory
-    temp_emb_directory_path.rmdir()
+    if len(list(temp_emb_directory_path.iterdir())) == 0:
+        temp_emb_directory_path.rmdir()
+    else:
+        for file in temp_emb_directory_path.iterdir():
+            file.unlink()
+        temp_emb_directory_path.rmdir()
 
     # ==============================
     # ADDING ROWS TO POSTGRES TABLES
