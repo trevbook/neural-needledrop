@@ -17,4 +17,4 @@ sudo docker rm neural-needledrop-ui-container || true
 
 # Run the UI container
 echo "Running the UI container..."
-sudo docker run -p 8080:8080 --name neural-needledrop-ui-container -d us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-ui:latest
+sudo docker run -p 80:8080 --name neural-needledrop-ui-container -d us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-ui:latest
