@@ -78,6 +78,9 @@ function ResultsPage() {
           releaseDateFilter
         );
 
+        console.log("Search results:")
+        console.log(data)
+
         // Check if data is a string and try to parse it
         let parsedData;
         if (typeof data === "string") {
