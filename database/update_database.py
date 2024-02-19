@@ -63,7 +63,7 @@ def update_database(
     postgres_upload_chunksize=5000,
     postgres_maintenance_work_mem="2GB",
     postgres_max_parallel_maintenance_workers=1,
-    max_n_videos_to_update_embeddings=100,
+    max_n_videos_to_update_embeddings=1000,
     n_max_embeddings_per_upload=500,
     recreate_embeddings_index_if_exists=True,
     embeddings_index_ivfflat_nlist=500,
@@ -561,10 +561,16 @@ def update_database(
 
     # Break up the embeddings into chunks
     all_emb_file_names = list(temp_emb_directory_path.iterdir())
-    for i in range(0, len(all_emb_file_names), n_max_embeddings_per_upload):
-        chunk = all_emb_file_names[i : i + n_max_embeddings_per_upload]
-        logger.debug(f"Loading embeddings chunk {i} into Postgres...")
-        load_embeddings_into_postgres(chunk)
+    n_chunks = len(all_emb_file_names) // n_max_embeddings_per_upload
+    for i in range(n_chunks):
+        start = i * n_max_embeddings_per_upload
+        end = (i + 1) * n_max_embeddings_per_upload
+        chunk_emb_file_names = all_emb_file_names[start:end]
+        load_embeddings_into_postgres(chunk_emb_file_names)
+        pct_complete = (i + 1) / n_chunks * 100
+        logger.debug(
+            f"Loaded chunk {i + 1} / {n_chunks} ({pct_complete:.2f}% complete)"
+        )
 
     # Delete the temp directory
     temp_emb_directory_path.rmdir()
