@@ -53,3 +53,4 @@ docker build -t neural-needledrop-pipeline .
 # Run the Docker image
 docker run -it -e PYTHONBUFFERED=1 -e LOG_TO_CONSOLE=True -e TQDM_ENABLED=True -e OPENAI_API_KEY=[INSERT OPENAI API KEY] neural-needledrop-pipeline
 ```
+ 
