@@ -9,8 +9,10 @@ docker run --name neural-needledrop-database -e POSTGRES_PASSWORD=my_password -e
 
 ### Running Database Update via Docker
 You must mount the folder you want your data in at the `/app/data` folder within the container. This is where the new data will sit. 
-```
 
+Make sure you're in the `database/` folder (via `cd database/`)
+```
+docker run 
 ```
   
 
