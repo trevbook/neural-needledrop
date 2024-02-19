@@ -633,3 +633,42 @@ def hybrid_search(
 
     # Return the result as a JSON
     return result_df.to_json(orient="records")
+
+
+def retrieve_table_size_metadata():
+    """
+    This method will run a SQL query to get back some information about the size of each table.
+    """
+
+    # Define the query that'll get the information about the size of each table
+    table_size_metadata_query = """
+    WITH row_counts AS (
+        SELECT 'embeddings' AS table_name, COUNT(DISTINCT(url)) AS video_count FROM embeddings
+        UNION ALL
+        SELECT 'transcriptions', COUNT(DISTINCT(url)) AS video_count FROM transcriptions
+        UNION ALL
+        SELECT 'embeddings_to_text', COUNT(DISTINCT(url)) AS video_count FROM embeddings_to_text
+        UNION ALL
+        SELECT 'video_metadata', COUNT(DISTINCT(url)) AS video_count FROM video_metadata
+    )
+    SELECT
+        t.table_name AS "table",
+        pg_size_pretty(pg_total_relation_size('"' || t.table_schema || '"."' || t.table_name || '"')) AS "total_size",
+        pg_size_pretty(pg_relation_size('"' || t.table_schema || '"."' || t.table_name || '"')) AS "table_size",
+        pg_size_pretty(pg_indexes_size('"' || t.table_schema || '"."' || t.table_name || '"')) AS "indexes_size",
+        rc.video_count AS "video_count"
+    FROM
+        information_schema.tables t
+    JOIN
+        row_counts rc ON t.table_name = rc.table_name
+    WHERE
+        t.table_name IN ('embeddings', 'transcriptions', 'embeddings_to_text', 'video_metadata')
+    """
+
+    # Query the database
+    table_size_metadata_df = postgres.query_postgres(
+        table_size_metadata_query, engine, logger=logger
+    )
+
+    # Return the results
+    return table_size_metadata_df

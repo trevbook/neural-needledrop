@@ -24,6 +24,7 @@ cache = TTLCache(maxsize=10, ttl=1800)
 import utils.search as search_utils
 from utils.logging import get_logger
 from utils.settings import LOG_TO_CONSOLE
+import utils.postgres_queries as pg_queries
 
 # Set up a logger for this notebook
 logger = get_logger("api", log_to_console=LOG_TO_CONSOLE)
@@ -124,3 +125,16 @@ def search(search_request: SearchRequest):
 
         # Return the error
         return {"error": str(e)}
+
+
+@app.get("/table_metadata")
+def table_metadata():
+    """
+    This endpoint returns metadata about the table.
+    """
+
+    # Use the retrieve_table_size_metadata function to get the table metadata
+    video_metadata_df = search_utils.retrieve_table_size_metadata()
+
+    # Return a dictionary with the metadata
+    return video_metadata_df.to_dict(orient="records")
