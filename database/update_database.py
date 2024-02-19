@@ -18,6 +18,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.sql import text
 from pgvector.sqlalchemy import Vector
 from tqdm import tqdm
+import traceback
 
 # Importing modules custom-built for this project
 from utils.settings import (
@@ -158,6 +159,54 @@ def update_database(
 
         # Log the error
         logger.error(f"An error occurred while creating the transcriptions table: {e}")
+    
+    # Try and add the ts_vec column if it doesn't exist
+    try: 
+        
+        # Log that we're adding the ts_vec column
+        logger.info("Trying to add the ts_vec column to the transcriptions table...")
+        
+        # Declare a query that'll identify whether the ts_vec column exists
+        tsvector_column_exists_query = """
+        SELECT
+        column_name
+        FROM
+        information_schema.columns
+        WHERE
+        table_name = 'transcriptions'
+        AND
+        column_name = 'ts_vec';
+        """
+        
+        # Execute the query
+        tsvector_column_exists = query_postgres(tsvector_column_exists_query, engine).shape[0] > 0
+        
+        # We're only going to run this notebook if the ts_vec column doesn't exist
+        if not tsvector_column_exists:
+            
+            # Log that we're adding the ts_vec column
+            logger.info("ADDING THE ts_vec COLUMN TO THE transcriptions TABLE...")
+            
+            # Define a query that'll add a tsvector column to the transcriptions table
+            add_tsvector_column_query = """
+            ALTER TABLE transcriptions
+            ADD COLUMN ts_vec TSVECTOR
+            GENERATED ALWAYS AS (
+                to_tsvector('english', text) 
+            ) STORED;
+            """
+
+            # Execute the query
+            query_postgres(add_tsvector_column_query, engine)
+        
+    except Exception as e:
+            
+            # Log the error
+            logger.error(f"An error occurred while adding the ts_vec column to the transcriptions table: {e}")
+            
+            # Log the traceback
+            logger.error(traceback.format_exc())
+    
 
     # =========================
     # EMBEDDINGS INITIALIZATION
