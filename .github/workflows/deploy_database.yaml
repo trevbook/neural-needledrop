@@ -53,6 +53,7 @@ jobs:
 
           # Copy the deployment script to the server, along with the GCP key
           scp -i ~/.ssh/id_rsa ./database/deployment/deploy_database.sh trevormhubbard@$IP_ADDRESS:/tmp/deploy_database.sh
+          scp -i ~/.ssh/id_rsa ./database/deployment/database_cron trevormhubbard@$IP_ADDRESS:/tmp/database_cron
           scp -i ~/.ssh/id_rsa ./gcp_key.json trevormhubbard@$IP_ADDRESS:/tmp/gcp_key.json
 
           # Deleting the temporary GCP JSON key file
