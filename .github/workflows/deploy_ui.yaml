@@ -46,8 +46,15 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H $IP_ADDRESS >> ~/.ssh/known_hosts
 
+          # Create a temporary file to store the GCP JSON key
+          echo "$GCP_KEY" > gcp_key.json
+
           # Copy the deployment script to the server, along with the GCP key
           scp -i ~/.ssh/id_rsa ./ui/deployment/deploy_ui.sh trevormhubbard@$IP_ADDRESS:/tmp/deploy_ui.sh
+          scp -i ~/.ssh/id_rsa ./gcp_key.json trevormhubbard@$IP_ADDRESS:/tmp/gcp_key.json
+
+          # Deleting the GCP key from the local machine
+          rm gcp_key.json
 
           # Running the deployment script on the server
           ssh -i ~/.ssh/id_rsa trevormhubbard@$IP_ADDRESS 'chmod +x /tmp/deploy_ui.sh && GCP_KEY=/tmp/gcp_key.json bash /tmp/deploy_ui.sh'
