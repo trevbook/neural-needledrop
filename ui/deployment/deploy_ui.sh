@@ -17,4 +17,4 @@ sudo docker rm neural-needledrop-ui-container || true
 
 # Run the UI container
 echo "Running the UI container..."
-sudo docker run -p 80:8080 --name neural-needledrop-ui-container -d us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-ui:latest
+sudo docker run --network=bridge --add-host=host.docker.internal:host-gateway -e VITE_API_BASE_URL=http://host.docker.internal:8000 -p 80:8080 --name neural-needledrop-ui-container -d us-central1-docker.pkg.dev/neural-needledrop/neural-needledrop-webapp/neural-needledrop-ui:latest
