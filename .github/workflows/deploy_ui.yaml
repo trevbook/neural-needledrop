@@ -32,6 +32,7 @@ jobs:
           provenance: false
           platforms: linux/amd64
           push: true
+          build-args: VITE_API_BASE_URL=http://host.docker.internal:8000
       - name: Install SSH client
         run: sudo apt-get install openssh-client
       - name: SSH and Update Server
