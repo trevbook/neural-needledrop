@@ -63,7 +63,7 @@ def update_database(
     postgres_upload_chunksize=5000,
     postgres_maintenance_work_mem="2GB",
     postgres_max_parallel_maintenance_workers=1,
-    max_n_videos_to_update_embeddings=250,
+    max_n_videos_to_update_embeddings=5000,
     n_max_embeddings_per_upload=750,
     recreate_embeddings_index_if_exists=True,
     embeddings_index_ivfflat_nlist=500,
